@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第一周学习包：测试理论与背包系统样例</title>
+<style>
+@page { size: A4; margin: 15mm 13mm; }
+* { box-sizing: border-box; }
+body { font-family: "Microsoft YaHei", "PingFang SC", -apple-system, "Segoe UI", sans-serif;
+  color: #1a1a1a; background: #fff; font-size: 10.5pt; line-height: 1.62;
+  margin: 0 auto; padding: 26px 32px; max-width: 880px; }
+h1 { font-size: 19pt; margin: 0 0 2px; font-weight: 600; letter-spacing: -0.4px; }
+.sub { color: #666; font-size: 9.5pt; margin: 0 0 6px; }
+.meta { color: #888; font-size: 9pt; margin: 0 0 16px; padding-bottom: 11px; border-bottom: 1px solid #e5e5e5; }
+h2 { font-size: 13.5pt; margin: 24px 0 9px; padding: 6px 0 6px 10px;
+  border-left: 4px solid #1a1a1a; background: #f5f5f3; font-weight: 600; page-break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 16px 0 6px; font-weight: 600; page-break-after: avoid; }
+h4 { font-size: 10.5pt; margin: 11px 0 4px; font-weight: 600; color: #333; page-break-after: avoid; }
+p { margin: 6px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 8px 0 12px;
+  page-break-inside: avoid; }
+th { background: #f3f3f1; text-align: left; padding: 5px 7px; border: 1px solid #ccc; font-weight: 600; }
+td { padding: 5px 7px; border: 1px solid #ccc; vertical-align: top; }
+td.c { text-align: center; }
+table.long { page-break-inside: auto; font-size: 8.5pt; }
+table.long thead { display: table-header-group; }
+table.long tr { page-break-inside: avoid; }
+tr.grp td { background: #ebebe8; font-weight: 600; }
+.one { background: #f7f7f4; border-left: 3px solid #444; padding: 7px 12px; margin: 8px 0 10px; font-size: 10pt; }
+.concl { background: #eef4ef; border-left: 3px solid #0f6e56; padding: 7px 12px; margin: 8px 0; font-size: 9.5pt; }
+.pit { background: #fdf6f6; border-left: 3px solid #a32d2d; padding: 8px 12px; margin: 8px 0; font-size: 9.5pt; }
+.sample { border: 1px solid #ccc; border-radius: 5px; padding: 9px 13px; margin: 9px 0;
+  background: #fcfcfa; page-break-inside: avoid; }
+.sample .st { font-weight: 600; font-size: 10pt; margin-bottom: 5px; color: #0c447c; }
+.sample dl { margin: 0; font-size: 9.5pt; }
+.sample dt { font-weight: 600; float: left; width: 70px; color: #555; }
+.sample dd { margin: 0 0 3px 74px; }
+.ex { border: 1px dashed #bbb; padding: 8px 13px; margin: 9px 0; background: #fafafa; font-size: 9.5pt; }
+ul, ol { margin: 5px 0; padding-left: 22px; }
+li { margin: 2px 0; }
+.toc { font-size: 10pt; padding-left: 0; list-style: none; margin: 8px 0 4px; }
+.toc li { margin: 3px 0; }
+.toc a { color: #1a1a1a; text-decoration: none; }
+code { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt;
+  background: #f0f0ee; padding: 1px 4px; border-radius: 3px; }
+.bad { color: #a32d2d; }
+.good { color: #0f6e56; }
+.foot { margin-top: 24px; padding-top: 9px; border-top: 1px solid #e5e5e5; color: #999; font-size: 8.5pt; }
+.pb { page-break-before: always; }
+@media print { body { padding: 0; max-width: none; } .noprint { display: none; } }
+</style>
+</head>
+<body>
+
+<h1>第一周学习包：测试理论与背包系统样例</h1>
+<p class="sub">游戏测试 L1 · Day 1 至 Day 7 · 全部样例围绕同一个背包系统</p>
+<p class="meta">约 20 小时 ｜ 最终产出：100 条背包系统测试用例（含设计方法标注）｜ 日期从你实际开始那天算起</p>
+
+<ul class="toc">
+  <li><a href="#s0">本周目标与使用说明</a></li>
+  <li><a href="#d1">Day 1 · 等价类划分与边界值分析</a></li>
+  <li><a href="#d2">Day 2 · 判定表、状态迁移、场景法</a></li>
+  <li><a href="#d3">Day 3 · 用例规范与 12 条完整样例</a></li>
+  <li><a href="#d4">Day 4 · 缺陷管理与 5 条 Bug 单样例</a></li>
+  <li><a href="#d5">Day 5 · 游戏架构常识</a></li>
+  <li><a href="#d6">Day 6–7 · 100 条用例清单与自检</a></li>
+</ul>
+
+<h2 id="s0">本周目标与使用说明</h2>
+<p>一周结束时，你要交付一份 <b>100 条背包系统测试用例</b>，每条都标注了推导方法。这不是数量任务：如果 100 条里有 80 条是「换个道具再点一遍」，那和 10 条没有区别。</p>
+<table>
+<tr><th style="width:12%">Day</th><th style="width:26%">主题</th><th style="width:14%">时长</th><th>当天产出</th></tr>
+<tr><td class="c">1</td><td>等价类与边界值</td><td class="c">2.5 h</td><td>背包容量推导表</td></tr>
+<tr><td class="c">2</td><td>判定表、状态迁移、场景法</td><td class="c">2.5 h</td><td>三张分析表</td></tr>
+<tr><td class="c">3</td><td>用例要素与规范</td><td class="c">2 h</td><td>10 条标准用例</td></tr>
+<tr><td class="c">4</td><td>缺陷管理</td><td class="c">2 h</td><td>5 条 Bug 单</td></tr>
+<tr><td class="c">5</td><td>游戏架构常识</td><td class="c">4 h</td><td>一张数据流向图</td></tr>
+<tr><td class="c">6</td><td>实战：写 60 条用例</td><td class="c">5 h</td><td>用例集 60 条</td></tr>
+<tr><td class="c">7</td><td>补至 100 条并复核</td><td class="c">3 h</td><td>完整用例集 + review 记录</td></tr>
+</table>
+<div class="one"><b>使用顺序：</b>每天先看「样例」，看懂这个场景在测什么，再回头读「讲义」。先看现象再学定义，理解速度会快数倍；反过来容易变成背名词。</div>
+<p>所有样例都围绕<b>同一个背包系统</b>。这样七天下来，你手上不是七份零散笔记，而是一份可以直接放进作品集的完整用例集。</p>
+
+<h2 id="d1">Day 1 · 等价类划分与边界值分析</h2>
+
+<h3>1.1 为什么需要设计方法</h3>
+<p>凭感觉测背包，你会做的动作大概是：打开背包、看看道具、用一个、丢一个。约 10 个动作。但背包的状态组合远不止 10 个：容量从 0 到 200、道具从普通到限时到锁定、操作从使用到拆分到批量整理、再叠加断网与多端。</p>
+<p><b>方法的价值不是让测试变复杂，而是让遗漏变得可见。</b>没有方法，你不知道自己漏了什么；有了方法，你能算出「应该有多少条、现在有多少条」。</p>
+
+<h3>1.2 等价类划分：三步</h3>
+<ol>
+<li>识别所有输入项（购买数量、道具 ID、名称文本、剩余次数）</li>
+<li>为每个输入划分<b>有效等价类</b>——程序应该正常处理的值</li>
+<li>为每个输入划分<b>无效等价类</b>——程序应该拦截的值</li>
+</ol>
+<p>同一个类里任取一个值即可，因为它们对程序的作用等价。这一步把「无穷多输入」压缩成「有限几类」。</p>
+
+<h3>1.3 边界值：三个点</h3>
+<p>缺陷集中在边界，因为边界是比较条件写错的地方。对每个边界取三点：</p>
+<ul>
+<li><b>上点</b>：边界本身的值（200）</li>
+<li><b>内点</b>：边界内侧最近的有效值（199）</li>
+<li><b>离点</b>：刚越过边界的无效值（201）</li>
+</ul>
+<div class="concl"><b>游戏测试的关键差异：边界不只是输入框，状态本身也有边界。</b>背包容量 200、道具剩余次数 0、金币 0、等级上限、堆叠上限、时间 23:59:59——这些都属于边界值分析。只盯着输入框，会漏掉游戏里最核心的一批缺陷。</div>
+
+<h3>1.4 样例：背包容量 200 的完整推导</h3>
+<table>
+<tr><th style="width:10%">用例</th><th style="width:12%">类型</th><th style="width:12%">数量</th><th style="width:30%">场景</th><th>预期结果</th></tr>
+<tr><td class="c">A01</td><td>零点</td><td class="c">0</td><td>空背包</td><td>显示空状态引导，不报错</td></tr>
+<tr><td class="c">A02</td><td>内点</td><td class="c">1</td><td>仅 1 个道具</td><td>正常显示，排序正确</td></tr>
+<tr><td class="c">A03</td><td>内点</td><td class="c">199</td><td>差一格满</td><td>仍可拾取第 200 个</td></tr>
+<tr><td class="c">A04</td><td>上点</td><td class="c">200</td><td>正好满</td><td>拾取第 201 个时提示已满，道具不消失</td></tr>
+<tr><td class="c">A10</td><td>离点</td><td class="c">201</td><td>超容量</td><td>扩容或系统发放时需有明确处理，不得静默吞掉</td></tr>
+<tr><td class="c">A11</td><td>无效等价类</td><td class="c">0 个</td><td>拾取数量为 0 的堆</td><td>拦截，不产生脏数据</td></tr>
+<tr><td class="c">A12</td><td>无效等价类</td><td class="c">负数</td><td>拾取数量为负</td><td>拦截；服务端不得写入负数量</td></tr>
+<tr><td class="c">A13</td><td>无效等价类</td><td class="c">—</td><td>道具 ID 不存在</td><td>拦截并记日志，不崩溃</td></tr>
+</table>
+<p>注意 A04 的预期结果里有一句「道具不消失」。这来自一个真实的高频缺陷：满包时拾取被拒绝，但客户端先把地面掉落物删了，玩家就永久丢了这件道具。<b>预期结果要写完整的状态，而不只是写「提示已满」。</b></p>
+
+<div class="ex"><b>今日练习：</b>不看样例，自己为「道具堆叠上限 99」写一张同样的推导表，至少覆盖零点、内点、上点、离点与两个无效等价类。写完再对照上面的结构，看漏了哪一项。</div>
+
+<h2 id="d2">Day 2 · 判定表、状态迁移、场景法</h2>
+
+<h3>2.1 三种方法解决三类不同问题</h3>
+<table>
+<tr><th style="width:22%">方法</th><th style="width:34%">解决什么</th><th>识别信号</th></tr>
+<tr><td>判定表</td><td>多个条件共同决定一个动作</td><td>需求里出现「且」「或」「如果…同时…」</td></tr>
+<tr><td>状态迁移</td><td>状态之间的流转与非法流转</td><td>功能有「待处理 / 进行中 / 已完成」这类状态词</td></tr>
+<tr><td>场景法</td><td>端到端链路是否走得通</td><td>要串起多个模块才能完成一件事</td></tr>
+</table>
+
+<h3>2.2 样例 A：整理规则的判定表</h3>
+<p>「整理」按钮的规则受三个条件影响：背包<b>是否有空格</b>、<b>是否存在可堆叠道具</b>、<b>是否存在锁定道具</b>。三个条件各两个取值，共 8 条规则：</p>
+<table>
+<tr><th style="width:9%">规则</th><th>有空格</th><th>可堆叠</th><th>有锁定</th><th>预期动作</th></tr>
+<tr><td class="c">R1</td><td class="c">是</td><td class="c">否</td><td class="c">否</td><td>按默认顺序紧凑排列</td></tr>
+<tr><td class="c">R2</td><td class="c">是</td><td class="c">否</td><td class="c">是</td><td>排列，锁定格位保留</td></tr>
+<tr><td class="c">R3</td><td class="c">是</td><td class="c">是</td><td class="c">否</td><td>先合并同类，再紧凑排列</td></tr>
+<tr><td class="c">R4</td><td class="c">是</td><td class="c">是</td><td class="c">是</td><td>合并同类，锁定道具不参与合并与移动</td></tr>
+<tr><td class="c">R5</td><td class="c">否</td><td class="c">否</td><td class="c">否</td><td>无可整理内容，提示或按钮置灰</td></tr>
+<tr><td class="c">R6</td><td class="c">否</td><td class="c">否</td><td class="c">是</td><td>无可整理内容，锁定道具保持原位</td></tr>
+<tr><td class="c">R7</td><td class="c">否</td><td class="c">是</td><td class="c">否</td><td>仅执行合并，合并后腾出空格</td></tr>
+<tr><td class="c">R8</td><td class="c">否</td><td class="c">是</td><td class="c">是</td><td>合并非锁定道具，锁定道具不动</td></tr>
+</table>
+<div class="pit"><b>这张表真正的用途不只是设计用例。</b>R4 和 R8 里「锁定道具是否参与合并」如果策划案没写，你就要在需求评审时提出来。判定表能暴露需求文档的空白——这比事后提 Bug 有价值得多。</div>
+
+<h3>2.3 样例 B：道具状态迁移矩阵</h3>
+<p>道具的六个状态：<code>未获得 · 持有 · 使用中 · 已消耗 · 已锁定 · 已过期</code>。下表每个 ✗ 都是一条必测用例：</p>
+<table>
+<tr><th style="width:16%">起始 \ 事件</th><th>拾取</th><th>使用</th><th>锁定</th><th>解锁</th><th>到期</th><th>丢弃</th></tr>
+<tr><td>未获得</td><td class="c">持有</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td></tr>
+<tr><td>持有</td><td class="c">✗</td><td class="c">使用中</td><td class="c">已锁定</td><td class="c">✗</td><td class="c">已过期</td><td class="c">未获得</td></tr>
+<tr><td>使用中</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td></tr>
+<tr><td>已消耗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td></tr>
+<tr><td>已锁定</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">持有</td><td class="c">已过期</td><td class="c">✗</td></tr>
+<tr><td>已过期</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">✗</td><td class="c">未获得</td></tr>
+</table>
+<div class="concl">36 个格子里合法迁移只有 9 条，<b>其余 27 条非法迁移才是缺陷最密集的区域</b>。已消耗的道具能否再次使用、已过期的能否生效、已锁定的能否被批量丢弃——这些路径如果服务端没做状态校验，就会出现刷取资源的严重问题。</div>
+
+<h3>2.4 样例 C：拾取链路的场景法</h3>
+<table>
+<tr><th style="width:14%">场景</th><th style="width:32%">路径</th><th>验证重点</th></tr>
+<tr><td>基本流</td><td>击杀 → 掉落 → 拾取 → 入包 → 刷新显示</td><td>链路走通，数量与 ID 正确</td></tr>
+<tr><td>备选 1</td><td>拾取时背包已满</td><td>提示明确，掉落物保留在地面</td></tr>
+<tr><td>备选 2</td><td>拾取瞬间断网</td><td>重连后状态一致，不吞不重</td></tr>
+<tr><td>备选 3</td><td>拾取成功但响应丢失</td><td>有查询补偿，不重复拾取</td></tr>
+<tr><td>备选 4</td><td>拾取响应重复推送</td><td>幂等，只入包一次</td></tr>
+<tr><td>备选 5</td><td>拾取过程中切后台</td><td>返回后进度与数据一致</td></tr>
+<tr><td>备选 6</td><td>多端同时拾取同一掉落</td><td>仅一次成功，另一端收到刷新</td></tr>
+</table>
+<p>基本流跑通一次就够；<b>备选流承担这条链路绝大部分的测试价值</b>，每一条都可能对应一次线上问题。</p>
+
+<div class="ex"><b>今日练习：</b>把三张表各抄一遍（手画，不要复制）。抄的过程中你会发现自己会忍不住问「这一格到底该填什么」——这些疑问就是明天需求评审时该问的问题，记下来。</div>
+
+<h2 id="d3">Day 3 · 用例规范与 12 条完整样例</h2>
+
+<h3>3.1 一条用例的八个要素</h3>
+<p>编号、所属模块、用例标题、前置条件、操作步骤、预期结果、设计方法、优先级。</p>
+<p>其中<b>设计方法</b>是新人最常省、但面试最常问的一列。它能回答「这条用例怎么来的」。写不出这一列，说明是拍脑袋想的。</p>
+
+<h3>3.2 唯一的判断标准</h3>
+<div class="one"><b>把用例交给一个完全不了解背景的人，他能不能不追问、直接照着执行并判断通过与否？</b>能，就是合格的；不能，就缺了东西。前置条件没写、步骤合并了多个动作、预期结果写成「正常」，都属于不合格。</div>
+
+<h3>3.3 好坏对照</h3>
+<table>
+<tr><th style="width:50%">不合格</th><th>合格</th></tr>
+<tr><td class="bad">测试背包满了会怎样</td><td class="good">A04 背包 200 格满时拾取第 201 个</td></tr>
+<tr><td class="bad">步骤：打开背包，测试一下</td><td class="good">1. 进入副本击杀怪物产生掉落<br>2. 点击拾取<br>3. 观察提示与背包状态</td></tr>
+<tr><td class="bad">预期：正常</td><td class="good">提示「背包已满」；掉落物保留在地面；背包数量仍为 200</td></tr>
+<tr><td class="bad">（没有标注方法）</td><td class="good">边界值·上点</td></tr>
+</table>
+
+<h3>3.4 十二条完整样例</h3>
+<p>下面 12 条覆盖五种方法与六个模块，作为书写格式的基准。先自己写 10 条，再对照这里找差距。</p>
+
+<div class="sample casecard">
+<div class="st">A04 ｜ 背包 200 格满时拾取第 201 个 <span style="font-weight:400;color:#888;font-size:8.5pt;">（边界值·上点 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>账号已登录；背包容量上限 200；背包已放入 200 个不堆叠的道具</dd>
+<dt>操作步骤</dt><dd>1. 进入副本并击杀怪物，掉落 1 个道具<br>2. 点击拾取<br>3. 观察提示与背包状态</dd>
+<dt>预期结果</dt><dd>提示「背包已满」；掉落物保留在地面不被吞掉；背包道具数量仍为 200；服务端下发拒绝且客户端不显示新增</dd>
+<dt>设计说明</dt><dd><i>这是上点用例。若只测 199 不测 200，满包逻辑的错误就会被漏掉。需同时检查掉落物是否还在，否则会出现「吞道具」。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">A16 ｜ 拾取过程中断网 <span style="font-weight:400;color:#888;font-size:8.5pt;">（场景法·异常 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>背包 100 格；网络正常；可在弱网工具中模拟断网</dd>
+<dt>操作步骤</dt><dd>1. 击杀怪物产生掉落<br>2. 点击拾取的瞬间断开网络<br>3. 恢复网络并等待重连<br>4. 查看背包与地面</dd>
+<dt>预期结果</dt><dd>重连后状态一致：要么拾取成功且道具在背包，要么拾取失败且道具仍在地面；不得出现两端都扣或两端都在的情况</dd>
+<dt>设计说明</dt><dd><i>断网类用例的预期结果往往不是单一值，而是「一致性约束」。这类写法是游戏测试与普通软件测试的重要差别。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">B03 ｜ 使用剩余次数为 0 的道具 <span style="font-weight:400;color:#888;font-size:8.5pt;">（边界值·零点 · P1）</span></div>
+<dl>
+<dt>前置条件</dt><dd>持有一个多次使用道具，剩余次数已被消耗至 0，且道具未从背包消失</dd>
+<dt>操作步骤</dt><dd>1. 打开背包找到该道具<br>2. 点击使用<br>3. 观察响应</dd>
+<dt>预期结果</dt><dd>不可使用；界面置灰或提示次数已用尽；不触发任何效果；服务端不产生消耗记录</dd>
+<dt>设计说明</dt><dd><i>零点边界容易触发除零、空指针或「负数次数」。要同时验证客户端不响应与服务端不记账。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">B13 ｜ 批量丢弃中混有锁定道具 <span style="font-weight:400;color:#888;font-size:8.5pt;">（判定表 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>背包中有 3 个道具，其中第 2 个已锁定；支持多选批量丢弃</dd>
+<dt>操作步骤</dt><dd>1. 进入批量选择模式<br>2. 全选 3 个道具<br>3. 点击丢弃并确认<br>4. 查看背包</dd>
+<dt>预期结果</dt><dd>仅未锁定的 2 个被丢弃；锁定道具保留且仍处于锁定状态；给出「已跳过锁定道具」的明确提示</dd>
+<dt>设计说明</dt><dd><i>判定表里的组合场景。若实现为「全成功或全失败」，都会产生错误结果，必须验证部分成功的处理。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">C08 ｜ 已过期 → 使用中（非法使用） <span style="font-weight:400;color:#888;font-size:8.5pt;">（状态迁移·非法 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>持有一个限时道具；通过修改服务器时间或等待使其到达过期时刻</dd>
+<dt>操作步骤</dt><dd>1. 不重进游戏，停留在背包界面直至道具过期<br>2. 直接点击该道具的使用按钮<br>3. 观察结果</dd>
+<dt>预期结果</dt><dd>使用被拒绝；提示道具已过期；不产生任何效果；道具随后被清理或标记为过期</dd>
+<dt>设计说明</dt><dd><i>非法迁移必须通过多端、界面未刷新、时间篡改等方式主动构造。不能因为「正常玩家不会这样」而跳过。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">C10 ｜ 跨天 00:00:00 限时道具到期 <span style="font-weight:400;color:#888;font-size:8.5pt;">（边界值·时间 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>限时道具将在当日 23:59:59 后到期；服务器时间可控或可等待</dd>
+<dt>操作步骤</dt><dd>1. 在 23:59:58 查看倒计时<br>2. 等到 00:00:00<br>3. 观察道具状态与倒计时显示</dd>
+<dt>预期结果</dt><dd>道具在 00:00:00 准时失效；倒计时不出现 -1 秒或 00:00:00 仍可使用；跨天任务同步刷新</dd>
+<dt>设计说明</dt><dd><i>时间边界是游戏测试特有的高频缺陷区。必须区分服务器时间与本地时间，后者可被玩家修改。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">C15 ｜ 多端同时登录操作同一道具 <span style="font-weight:400;color:#888;font-size:8.5pt;">（场景法 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>同一账号在设备 A 与设备 B 同时在线；背包中有 1 个消耗品</dd>
+<dt>操作步骤</dt><dd>1. 设备 A 与 B 同时打开背包<br>2. 两端几乎同时使用同一道具<br>3. 查看两端显示与服务端记录</dd>
+<dt>预期结果</dt><dd>仅一次生效；另一端收到状态刷新；道具只扣 1 个；不出现重复发放效果或负数</dd>
+<dt>设计说明</dt><dd><i>涉及并发与幂等，属于资金与资源安全类问题，一律按 P0 处理。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">D04 ｜ 有空格 + 有可堆叠 + 有锁定时整理 <span style="font-weight:400;color:#888;font-size:8.5pt;">（判定表 R4 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>背包中存在空格、两堆可合并的同类道具、以及至少 1 个锁定道具</dd>
+<dt>操作步骤</dt><dd>1. 记录整理前所有道具的 ID、数量与锁定状态<br>2. 点击「整理」<br>3. 等待动画结束并核对</dd>
+<dt>预期结果</dt><dd>同类道具正确合并；锁定道具位置保持不变或按规则保留；整理前后道具 ID 与总数量完全一致</dd>
+<dt>设计说明</dt><dd><i>三种条件同时满足是组合最复杂的一条规则。验证要点是「数据不变」而非「看起来整齐」。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">E09 ｜ 使用回调重复推送 <span style="font-weight:400;color:#888;font-size:8.5pt;">（场景法·幂等 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>可在测试环境重放服务端回调，或通过抓包工具重复发送同一响应</dd>
+<dt>操作步骤</dt><dd>1. 使用 1 个道具并捕获成功响应<br>2. 将该响应重复推送 3 次<br>3. 查看道具数量与效果记录</dd>
+<dt>预期结果</dt><dd>效果只结算一次；道具只扣 1 个；服务端有幂等键或去重记录；不产生重复日志告警以外的副作用</dd>
+<dt>设计说明</dt><dd><i>幂等是支付与资源类链路的核心。重复回调在真实网络环境中必然发生，不是理论假设。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">E12 ｜ 热更新后背包数据兼容 <span style="font-weight:400;color:#888;font-size:8.5pt;">（场景法 · P0）</span></div>
+<dl>
+<dt>前置条件</dt><dd>存在一份热更新前产生的存档；准备新版本配置</dd>
+<dt>操作步骤</dt><dd>1. 用旧版本账号产生背包数据<br>2. 执行热更新到新版本<br>3. 打开背包并使用道具</dd>
+<dt>预期结果</dt><dd>旧道具可正常显示与使用；新增字段有默认值；不出现解析失败、闪退或道具丢失</dd>
+<dt>设计说明</dt><dd><i>热更新是游戏特有的发布方式。老数据与新配置的兼容性必须在版本切换时验证。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">F05 ｜ 连续开关背包 50 次内存增长 <span style="font-weight:400;color:#888;font-size:8.5pt;">（性能 · P1）</span></div>
+<dl>
+<dt>前置条件</dt><dd>中端机型；已接入性能采集工具；背包内有 150 个道具</dd>
+<dt>操作步骤</dt><dd>1. 记录初始内存<br>2. 连续打开、关闭背包 50 次<br>3. 记录结束内存并等待 GC<br>4. 观察帧率曲线</dd>
+<dt>预期结果</dt><dd>结束内存较初始值增长在可接受阈值内且可回收；过程中无持续掉帧；不出现 OOM 崩溃</dd>
+<dt>设计说明</dt><dd><i>性能用例的预期结果必须给出可量化的判定，只写「不卡」无法验收。阈值需与项目标准对齐。</i></dd>
+</dl>
+</div>
+<div class="sample casecard">
+<div class="st">F09 ｜ 道具名称含特殊字符 <span style="font-weight:400;color:#888;font-size:8.5pt;">（等价类·无效 · P1）</span></div>
+<dl>
+<dt>前置条件</dt><dd>具备可自定义道具名称的能力（如装备命名、礼包自定义字段）</dd>
+<dt>操作步骤</dt><dd>1. 输入含 % 、' 、; 、尖括号与 emoji 的名称<br>2. 保存<br>3. 在背包、交易行、排行榜三处查看</dd>
+<dt>预期结果</dt><dd>正确保存并原样显示；不截断界面；不引发注入或脚本执行；三处显示一致</dd>
+<dt>设计说明</dt><dd><i>特殊字符不只是「能否输入」，还要验证跨模块显示与安全性，这是等价类里最常被跳过的一类。</i></dd>
+</dl>
+</div>
+
+<div class="ex"><b>今日练习：</b>从 100 条清单里任选 10 条，按上面八要素写完整。写完检查：每条的预期结果是否可被直接判定，是否写出了「数据不变」这类一致性约束。</div>
+
+<h2 id="d4">Day 4 · 缺陷管理与 5 条 Bug 单样例</h2>
+
+<h3>4.1 生命周期</h3>
+<p><code>新建 → 已指派 → 修复中 → 待验证 → 已关闭</code>。三个分支：重新打开、拒绝（不修 / 无法复现 / 设计如此 / 重复）、延期（<b>务必记录影响版本号</b>）。</p>
+
+<h3>4.2 严重程度与优先级不是一回事</h3>
+<table>
+<tr><th style="width:18%">维度</th><th style="width:38%">严重程度 Severity</th><th>优先级 Priority</th></tr>
+<tr><td>定义</td><td>缺陷对系统的破坏力</td><td>修复的紧急程度</td></tr>
+<tr><td>判定者</td><td>测试人员（技术判断）</td><td>产品或主程（商业判断）</td></tr>
+<tr><td>依据</td><td>功能失效程度、数据影响</td><td>影响用户量、上线时间、修复成本</td></tr>
+</table>
+<p><b>高严重 + 低优先级是真实存在的。</b>资源有限时按「影响用户量 ÷ 修复成本」排序，不是按破坏力排序。能说清这一点，说明你理解项目运作。</p>
+
+<h3>4.3 五条完整 Bug 单</h3>
+
+<div class="sample bugcard">
+<div class="st">BUG-01 ｜ 背包-满格状态下商城购买道具，扣款成功但未到账且无提示（必现）</div>
+<dl>
+<dt>严重/优先</dt><dd>S1 / 高　　复现率：必现 100%</dd>
+<dt>环境</dt><dd>Android 13 / Pixel 6 / v2.4.1 / 测试服 / 账号 test_bag_01</dd>
+<dt>前置条件</dt><dd>背包 200 格已满；账号钻石 1000</dd>
+<dt>复现步骤</dt><dd>1. 打开商城<br>2. 购买「初级强化石」×1<br>3. 支付钻石<br>4. 打开背包查看</dd>
+<dt>预期结果</dt><dd>背包满时应拦截购买，或购买成功后通过邮件补发道具，并给出明确提示</dd>
+<dt>实际结果</dt><dd><span class="bad">钻石已扣除 100，背包无新增道具，无邮件、无提示、无错误弹窗</span></dd>
+<dt>附件</dt><dd>截图 3 张、客户端日志 logcat 片段、服务端订单查询结果</dd>
+</dl>
+</div>
+<div class="sample bugcard">
+<div class="st">BUG-02 ｜ 背包-限时道具已过期但界面未刷新时仍可使用并获得效果（必现）</div>
+<dl>
+<dt>严重/优先</dt><dd>S2 / 高　　复现率：必现 100%</dd>
+<dt>环境</dt><dd>Android 12 / 红米 Note 11 / v2.4.1 / 测试服 / 账号 test_bag_02</dd>
+<dt>前置条件</dt><dd>持有 1 个 5 分钟后过期的限时道具，停留在背包界面</dd>
+<dt>复现步骤</dt><dd>1. 打开背包后不做任何操作<br>2. 等待 5 分钟直至过期<br>3. 不刷新界面，直接点击使用</dd>
+<dt>预期结果</dt><dd>使用被服务端拒绝，提示道具已过期，不产生效果</dd>
+<dt>实际结果</dt><dd><span class="bad">使用成功，效果生效，道具消失；服务端未在过期状态下做校验</span></dd>
+<dt>附件</dt><dd>录屏 1 段、服务端道具状态快照、抓包请求与响应</dd>
+</dl>
+</div>
+<div class="sample bugcard">
+<div class="st">BUG-03 ｜ 背包-弱网下快速双击使用消耗品，道具扣 2 个但效果只结算 1 次（高概率）</div>
+<dl>
+<dt>严重/优先</dt><dd>S1 / 高　　复现率：高概率 约 60%</dd>
+<dt>环境</dt><dd>Android 13 / 模拟器 / v2.4.1 / 弱网 300ms 延迟 10% 丢包 / 账号 test_bag_03</dd>
+<dt>前置条件</dt><dd>持有 2 个以上同一消耗品</dd>
+<dt>复现步骤</dt><dd>1. 开启弱网模拟<br>2. 打开背包<br>3. 在 200ms 内连续点击使用按钮两次<br>4. 等待响应完成</dd>
+<dt>预期结果</dt><dd>两次点击应合并为一次有效操作（前置按钮置灰或请求幂等），只扣 1 个道具</dd>
+<dt>实际结果</dt><dd><span class="bad">道具减少 2 个，但增益效果只生效 1 次，等于玩家损失 1 个道具</span></dd>
+<dt>附件</dt><dd>录屏 1 段、两次请求的抓包对比、服务端消耗流水</dd>
+</dl>
+</div>
+<div class="sample bugcard">
+<div class="st">BUG-04 ｜ 背包-执行整理后锁定道具位置被改变（必现）</div>
+<dl>
+<dt>严重/优先</dt><dd>S3 / 中　　复现率：必现 100%</dd>
+<dt>环境</dt><dd>iOS 16 / iPhone 13 / v2.4.1 / 正式服 / 账号 test_bag_04</dd>
+<dt>前置条件</dt><dd>背包中有 3 个锁定道具与若干普通道具</dd>
+<dt>复现步骤</dt><dd>1. 记录 3 个锁定道具所在格位<br>2. 点击「整理」<br>3. 等待动画结束</dd>
+<dt>预期结果</dt><dd>锁定道具保持在原格位不参与排序（或按需求文档约定的固定规则处理）</dd>
+<dt>实际结果</dt><dd><span class="bad">3 个锁定道具全部被移动到末尾，用户自定义摆放失效</span></dd>
+<dt>附件</dt><dd>整理前后截图对比、格位编号记录</dd>
+</dl>
+</div>
+<div class="sample bugcard">
+<div class="st">BUG-05 ｜ 背包-720×1280 分辨率下最后一列道具图标被裁切（必现，仅特定机型）</div>
+<dl>
+<dt>严重/优先</dt><dd>S3 / 低　　复现率：必现（限该分辨率）</dd>
+<dt>环境</dt><dd>Android 10 / 720×1280 低端机 / v2.4.1 / 正式服 / 账号 test_bag_05</dd>
+<dt>前置条件</dt><dd>背包内有至少 20 个道具</dd>
+<dt>复现步骤</dt><dd>1. 打开背包<br>2. 滑动到最右侧一列<br>3. 观察图标显示</dd>
+<dt>预期结果</dt><dd>最后一列图标完整显示，可正常点击</dd>
+<dt>实际结果</dt><dd><span class="bad">最右侧一列约 30% 被屏幕边缘裁切，且点击热区偏移</span></dd>
+<dt>附件</dt><dd>截图 2 张、机型与分辨率信息、UI 层级导出</dd>
+</dl>
+</div>
+
+<div class="pit"><b>注意 BUG-03 的复现率写的是「高概率约 60%」。</b>低概率缺陷同样必须提，不能因为复现不了就算了。正确做法：提单 + 标注复现率 + 附上抓到的日志，把判断权交给开发。你放弃的那条，可能就是线上事故的那条。</div>
+
+<div class="ex"><b>今日练习：</b>为 Day 3 你写的 10 条用例，各虚构一条对应的缺陷，只写标题与严重程度。标题公式：<code>[模块] + [前置条件] + [操作] + [实际结果] + [复现率]</code>。</div>
+
+<h2 id="d5">Day 5 · 游戏架构常识</h2>
+<p>这一天的目的不是学开发，而是<b>知道数据存在哪、谁做校验、什么情况下会出现你正在测的那些 bug</b>。</p>
+
+<h3>5.1 客户端与服务端各存什么</h3>
+<table>
+<tr><th style="width:22%">位置</th><th style="width:34%">通常存什么</th><th>测试含义</th></tr>
+<tr><td>客户端</td><td>界面、图标、动画、本地缓存的配置表</td><td>显示错误多为客户端问题</td></tr>
+<tr><td>服务端</td><td>道具数量、金币、订单、任务状态等权威数据</td><td>数据错误一定是服务端或同步问题</td></tr>
+<tr><td>配置表</td><td>道具 ID、堆叠上限、价格、掉落概率</td><td>数值类缺陷先查配置，再查代码</td></tr>
+</table>
+<div class="concl"><b>判断口诀：</b>「界面显示错、数量对」→ 客户端；「数量错、账变」→ 服务端；「重登后恢复」→ 客户端缓存；「重登后仍错」→ 服务端数据。<b>这条判断能力，靠的就是 Day 5 的内容。</b></div>
+
+<h3>5.2 一次「使用道具」背后发生了什么</h3>
+<ol>
+<li>客户端点击 → 做一次本地预检查（等级、冷却、数量），决定按钮是否可点</li>
+<li>发送请求到服务端，带上道具 ID 与操作类型</li>
+<li>服务端<b>重新做一遍完整校验</b>（不能信任客户端）</li>
+<li>服务端写数据库，扣道具、发效果、记流水</li>
+<li>服务端下发结果，客户端更新界面</li>
+</ol>
+<p>第 3 步是关键。如果开发者只在客户端做了校验、服务端省略了，那么通过抓包改请求、多端并发、界面未刷新等手段就能绕过限制——这正是 C08、C15、E09 这几条用例能测出问题的原因。</p>
+
+<h3>5.3 帧循环、状态同步与热更新</h3>
+<ul>
+<li><b>帧循环</b>：客户端按帧刷新，所以「界面未刷新时仍能操作」是真实可构造的场景，不是假想</li>
+<li><b>状态同步</b>：服务端是权威，客户端只是投影。断线重连后应以服务端为准，这决定了 C14 的预期结果写法</li>
+<li><b>热更新</b>：不发安装包即可更新配置与逻辑，所以老存档必须能兼容新版本（E12、E13）</li>
+<li><b>SDK</b>：渠道登录、支付、实名认证、防沉迷，各自是独立链路，容易出现「游戏逻辑没问题但支付回调异常」</li>
+</ul>
+
+<h3>5.4 样例：一次「道具消失」缺陷的定位过程</h3>
+<div class="sample">
+<div class="st">现象：玩家反馈背包里少了一个道具，无操作记录</div>
+<dl>
+<dt>第 1 步</dt><dd>重登游戏 → 道具仍未出现，排除客户端缓存问题</dd>
+<dt>第 2 步</dt><dd>查服务端道具流水 → 存在一条「使用消耗」记录，但玩家否认使用</dd>
+<dt>第 3 步</dt><dd>查该时间点的请求日志 → 发现两条相同请求，间隔 180ms</dd>
+<dt>第 4 步</dt><dd>抓包复现 → 弱网下快速双击可稳定触发两次请求</dd>
+<dt>第 5 步</dt><dd>查服务端代码 → 使用接口无幂等键，两次请求各扣一次道具</dd>
+<dt>结论</dt><dd><b>服务端幂等缺失</b>，非客户端问题；对应本包 BUG-03 与用例 E09、C15</dd>
+</dl>
+</div>
+<p>这个过程说明了一件事：<b>不懂架构也能提 Bug，但只能写「道具不见了」；懂架构才能把缺陷定位到具体环节</b>，让开发十分钟就能修。这是初级与中级测试的分水岭。</p>
+
+<div class="ex"><b>今日练习：</b>画一张「使用道具」的数据流向图，标出客户端、服务端、数据库、配置表四个节点，并在图上标出你认为最可能出问题的两处。然后对照 5.2 的五个步骤，看你标的位置对不对。</div>
+
+<h2 id="d6">Day 6–7 · 100 条用例清单与自检</h2>
+
+<h3>6.1 使用方法（重要）</h3>
+<div class="one"><b>不要直接抄这份清单。</b>正确做法：Day 6 先自己写 60 条，写完再打开这份清单，找出你漏掉的模块；Day 7 补齐到 100 条并逐条标注方法。<b>差距本身就是最有价值的学习结果</b>——它精确指出了你的盲区在容量、状态、还是异常链路上。</div>
+<p>清单只给了编号、标题、设计方法与优先级。前置条件、操作步骤、预期结果需要你自己填，格式参照 3.4 的 12 条完整样例。</p>
+
+<h3>6.2 完整清单（100 条）</h3>
+<table class="long" id="cases100"><thead><tr><th style="width:9%">编号</th><th>用例标题</th><th style="width:20%">设计方法</th><th style="width:10%">优先级</th></tr></thead><tbody><tr class="grp"><td colspan="4">A 容量与拾取（18 条）</td></tr><tr><td class="c">A01</td><td>空背包首次拾取单个道具</td><td class="c">边界值·零点</td><td class="c">P1</td></tr><tr><td class="c">A02</td><td>背包仅 1 个道具时拾取</td><td class="c">边界值·内点</td><td class="c">P2</td></tr><tr><td class="c">A03</td><td>背包 199 格时拾取第 200 个</td><td class="c">边界值·内点</td><td class="c">P1</td></tr><tr><td class="c">A04</td><td>背包 200 格满时拾取第 201 个</td><td class="c">边界值·上点</td><td class="c">P0</td></tr><tr><td class="c">A05</td><td>背包满时批量拾取（部分可放入）</td><td class="c">边界值+场景法</td><td class="c">P1</td></tr><tr><td class="c">A06</td><td>背包满时系统邮件发放道具</td><td class="c">边界值</td><td class="c">P0</td></tr><tr><td class="c">A07</td><td>背包满时商城购买道具</td><td class="c">边界值</td><td class="c">P0</td></tr><tr><td class="c">A08</td><td>扩容后立即再次拾取</td><td class="c">状态迁移</td><td class="c">P1</td></tr><tr><td class="c">A09</td><td>缩容后道具数量超过新上限</td><td class="c">状态迁移·非法</td><td class="c">P0</td></tr><tr><td class="c">A10</td><td>单次拾取数量超过上限（如 300 个）</td><td class="c">边界值·离点</td><td class="c">P1</td></tr><tr><td class="c">A11</td><td>拾取数量为 0 的道具堆</td><td class="c">等价类·无效</td><td class="c">P2</td></tr><tr><td class="c">A12</td><td>拾取数量为负数的异常数据</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">A13</td><td>拾取不存在的道具 ID</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">A14</td><td>拾取已下架或已过期的道具 ID</td><td class="c">等价类·无效</td><td class="c">P2</td></tr><tr><td class="c">A15</td><td>快速连续点击拾取 10 次</td><td class="c">场景法·重复</td><td class="c">P1</td></tr><tr><td class="c">A16</td><td>拾取过程中断网</td><td class="c">场景法·异常</td><td class="c">P0</td></tr><tr><td class="c">A17</td><td>拾取成功后杀进程重进</td><td class="c">场景法·异常</td><td class="c">P0</td></tr><tr><td class="c">A18</td><td>拾取过程中切换账号</td><td class="c">场景法·异常</td><td class="c">P1</td></tr><tr class="grp"><td colspan="4">B 道具操作（22 条）</td></tr><tr><td class="c">B01</td><td>使用普通消耗品</td><td class="c">场景法·基本流</td><td class="c">P0</td></tr><tr><td class="c">B02</td><td>使用剩余次数为 1 的道具</td><td class="c">边界值</td><td class="c">P1</td></tr><tr><td class="c">B03</td><td>使用剩余次数为 0 的道具</td><td class="c">边界值·零点</td><td class="c">P1</td></tr><tr><td class="c">B04</td><td>连续使用同道具直至耗尽</td><td class="c">边界值</td><td class="c">P1</td></tr><tr><td class="c">B05</td><td>使用后道具是否正确消失</td><td class="c">功能</td><td class="c">P0</td></tr><tr><td class="c">B06</td><td>等级不足时使用有等级限制的道具</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">B07</td><td>职业不符时使用限定职业道具</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">B08</td><td>冷却期间再次使用</td><td class="c">状态迁移·非法</td><td class="c">P1</td></tr><tr><td class="c">B09</td><td>丢弃道具并确认</td><td class="c">场景法</td><td class="c">P1</td></tr><tr><td class="c">B10</td><td>丢弃时点击取消</td><td class="c">场景法·备选流</td><td class="c">P2</td></tr><tr><td class="c">B11</td><td>丢弃已锁定道具</td><td class="c">判定表</td><td class="c">P0</td></tr><tr><td class="c">B12</td><td>丢弃数量为 0</td><td class="c">等价类·无效</td><td class="c">P2</td></tr><tr><td class="c">B13</td><td>批量丢弃中混有锁定道具</td><td class="c">判定表</td><td class="c">P0</td></tr><tr><td class="c">B14</td><td>出售道具后金币正确增加</td><td class="c">功能</td><td class="c">P0</td></tr><tr><td class="c">B15</td><td>出售后金币将超过持有上限</td><td class="c">边界值</td><td class="c">P0</td></tr><tr><td class="c">B16</td><td>出售已绑定或不可交易道具</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">B17</td><td>出售后立即回购</td><td class="c">场景法</td><td class="c">P2</td></tr><tr><td class="c">B18</td><td>堆叠已达上限时拾取同类道具</td><td class="c">边界值</td><td class="c">P1</td></tr><tr><td class="c">B19</td><td>将堆叠道具拆分为两堆</td><td class="c">功能</td><td class="c">P2</td></tr><tr><td class="c">B20</td><td>拆分数量等于总数量</td><td class="c">边界值</td><td class="c">P2</td></tr><tr><td class="c">B21</td><td>拆分数量大于总数量</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">B22</td><td>拖放道具到非法格子</td><td class="c">状态迁移·非法</td><td class="c">P2</td></tr><tr class="grp"><td colspan="4">C 状态与迁移（16 条）</td></tr><tr><td class="c">C01</td><td>未获得 → 持有（拾取）</td><td class="c">状态迁移·合法</td><td class="c">P0</td></tr><tr><td class="c">C02</td><td>持有 → 使用中（使用）</td><td class="c">状态迁移·合法</td><td class="c">P0</td></tr><tr><td class="c">C03</td><td>使用中 → 已消耗</td><td class="c">状态迁移·合法</td><td class="c">P0</td></tr><tr><td class="c">C04</td><td>持有 → 已过期（限时到期）</td><td class="c">状态迁移·合法</td><td class="c">P1</td></tr><tr><td class="c">C05</td><td>持有 → 已锁定</td><td class="c">状态迁移·合法</td><td class="c">P1</td></tr><tr><td class="c">C06</td><td>已锁定 → 持有（解锁）</td><td class="c">状态迁移·合法</td><td class="c">P1</td></tr><tr><td class="c">C07</td><td>已消耗 → 持有（非法回退）</td><td class="c">状态迁移·非法</td><td class="c">P0</td></tr><tr><td class="c">C08</td><td>已过期 → 使用中（非法使用）</td><td class="c">状态迁移·非法</td><td class="c">P0</td></tr><tr><td class="c">C09</td><td>已锁定 → 已消耗（非法使用）</td><td class="c">状态迁移·非法</td><td class="c">P0</td></tr><tr><td class="c">C10</td><td>跨天 00:00:00 限时道具到期</td><td class="c">边界值·时间</td><td class="c">P0</td></tr><tr><td class="c">C11</td><td>23:59:59 使用限时道具</td><td class="c">边界值·时间</td><td class="c">P1</td></tr><tr><td class="c">C12</td><td>服务器时间与本地时间不一致</td><td class="c">边界值</td><td class="c">P0</td></tr><tr><td class="c">C13</td><td>切后台 5 分钟后返回</td><td class="c">场景法</td><td class="c">P1</td></tr><tr><td class="c">C14</td><td>断线重连后道具状态一致</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">C15</td><td>多端同时登录操作同一道具</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">C16</td><td>重进游戏后状态恢复</td><td class="c">场景法</td><td class="c">P0</td></tr><tr class="grp"><td colspan="4">D 判定表：整理规则（12 条）</td></tr><tr><td class="c">D01</td><td>有空格 + 无可堆叠 + 无锁定</td><td class="c">判定表 R1</td><td class="c">P2</td></tr><tr><td class="c">D02</td><td>有空格 + 无可堆叠 + 有锁定</td><td class="c">判定表 R2</td><td class="c">P1</td></tr><tr><td class="c">D03</td><td>有空格 + 有可堆叠 + 无锁定</td><td class="c">判定表 R3</td><td class="c">P1</td></tr><tr><td class="c">D04</td><td>有空格 + 有可堆叠 + 有锁定</td><td class="c">判定表 R4</td><td class="c">P0</td></tr><tr><td class="c">D05</td><td>无空格 + 无可堆叠 + 无锁定</td><td class="c">判定表 R5</td><td class="c">P2</td></tr><tr><td class="c">D06</td><td>无空格 + 无可堆叠 + 有锁定</td><td class="c">判定表 R6</td><td class="c">P1</td></tr><tr><td class="c">D07</td><td>无空格 + 有可堆叠 + 无锁定</td><td class="c">判定表 R7</td><td class="c">P1</td></tr><tr><td class="c">D08</td><td>无空格 + 有可堆叠 + 有锁定</td><td class="c">判定表 R8</td><td class="c">P0</td></tr><tr><td class="c">D09</td><td>全部为锁定道具时整理</td><td class="c">判定表·边界</td><td class="c">P1</td></tr><tr><td class="c">D10</td><td>全部为堆叠已满道具时整理</td><td class="c">判定表·边界</td><td class="c">P1</td></tr><tr><td class="c">D11</td><td>整理过程中断网</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">D12</td><td>整理前后道具总数与 ID 不变</td><td class="c">场景法·校验</td><td class="c">P0</td></tr><tr class="grp"><td colspan="4">E 场景法：完整链路（16 条）</td></tr><tr><td class="c">E01</td><td>基本流：拾取→查看→使用→消耗</td><td class="c">场景法·基本流</td><td class="c">P0</td></tr><tr><td class="c">E02</td><td>拾取→丢弃→找回</td><td class="c">场景法·备选流</td><td class="c">P2</td></tr><tr><td class="c">E03</td><td>拾取→锁定→批量整理</td><td class="c">场景法</td><td class="c">P1</td></tr><tr><td class="c">E04</td><td>商城购买→背包已满→邮件补发</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">E05</td><td>副本掉落→自动拾取→满包提示</td><td class="c">场景法</td><td class="c">P1</td></tr><tr><td class="c">E06</td><td>交易接收→到账→状态刷新</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">E07</td><td>使用过程中断网</td><td class="c">场景法·异常</td><td class="c">P0</td></tr><tr><td class="c">E08</td><td>使用过程中杀进程</td><td class="c">场景法·异常</td><td class="c">P0</td></tr><tr><td class="c">E09</td><td>使用回调重复推送</td><td class="c">场景法·幂等</td><td class="c">P0</td></tr><tr><td class="c">E10</td><td>弱网下重复点击使用</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">E11</td><td>后台推送道具时前台无刷新</td><td class="c">场景法</td><td class="c">P1</td></tr><tr><td class="c">E12</td><td>热更新后背包数据兼容</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">E13</td><td>老版本存档在新版本打开</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">E14</td><td>跨服转区后道具保留</td><td class="c">场景法</td><td class="c">P0</td></tr><tr><td class="c">E15</td><td>账号封禁期间道具到期</td><td class="c">场景法</td><td class="c">P2</td></tr><tr><td class="c">E16</td><td>服务器回档后道具状态</td><td class="c">场景法</td><td class="c">P0</td></tr><tr class="grp"><td colspan="4">F 兼容、性能与界面（16 条）</td></tr><tr><td class="c">F01</td><td>小屏幕分辨率下背包布局</td><td class="c">兼容性</td><td class="c">P2</td></tr><tr><td class="c">F02</td><td>平板横竖屏切换</td><td class="c">兼容性</td><td class="c">P2</td></tr><tr><td class="c">F03</td><td>折叠屏展开与折叠</td><td class="c">兼容性</td><td class="c">P2</td></tr><tr><td class="c">F04</td><td>低端机打开 200 格背包耗时</td><td class="c">性能</td><td class="c">P1</td></tr><tr><td class="c">F05</td><td>连续开关背包 50 次内存增长</td><td class="c">性能</td><td class="c">P1</td></tr><tr><td class="c">F06</td><td>背包快速滚动帧率</td><td class="c">性能</td><td class="c">P2</td></tr><tr><td class="c">F07</td><td>道具图标加载失败的占位</td><td class="c">功能</td><td class="c">P2</td></tr><tr><td class="c">F08</td><td>道具名称超长时的显示</td><td class="c">边界值</td><td class="c">P2</td></tr><tr><td class="c">F09</td><td>道具名称含特殊字符</td><td class="c">等价类·无效</td><td class="c">P1</td></tr><tr><td class="c">F10</td><td>多语言下名称截断</td><td class="c">本地化</td><td class="c">P2</td></tr><tr><td class="c">F11</td><td>数量超过显示上限（999999+）</td><td class="c">边界值</td><td class="c">P1</td></tr><tr><td class="c">F12</td><td>数量为 0 时不显示角标</td><td class="c">边界值</td><td class="c">P2</td></tr><tr><td class="c">F13</td><td>使用时的音效与震动反馈</td><td class="c">UI</td><td class="c">P3</td></tr><tr><td class="c">F14</td><td>新手引导期间背包入口</td><td class="c">场景法</td><td class="c">P2</td></tr><tr><td class="c">F15</td><td>无障碍与大字体模式</td><td class="c">兼容性</td><td class="c">P3</td></tr><tr><td class="c">F16</td><td>深色模式下图标对比度</td><td class="c">兼容性</td><td class="c">P3</td></tr></tbody></table>
+
+<h3>6.3 分布自检</h3>
+<table>
+<tr><th style="width:30%">检查项</th><th style="width:18%">应有</th><th>说明</th></tr>
+<tr><td>用例总数</td><td class="c">100 条</td><td>允许你改标题，但不建议用「换个道具再测一遍」凑数</td></tr>
+<tr><td>五种方法覆盖</td><td class="c">全部出现</td><td>每种方法至少 8 条，且标注准确</td></tr>
+<tr><td>非法路径占比</td><td class="c">≥ 30%</td><td>状态迁移·非法、等价类·无效、场景法·异常合计应超 30 条</td></tr>
+<tr><td>P0 用例</td><td class="c">约 20 条</td><td>集中在数据一致性、资金、并发、崩溃</td></tr>
+<tr><td>模块覆盖</td><td class="c">A 至 F 六组</td><td>如果某组一条都没写，说明该视角被忽略了</td></tr>
+</table>
+
+<h3>6.4 交付前逐条复核</h3>
+<ul>
+<li>每条都有「设计方法」标注，且能口头说清为什么用这个方法</li>
+<li>每条的预期结果可被直接判定，没有「正常」「合理」「符合预期」这类词</li>
+<li>异常类用例写的是「一致性约束」，不是单一值（参考 A16、C15）</li>
+<li>前置条件里写清了账号状态、容量状态、网络状态、时间状态</li>
+<li>把用例集发给一位同学，看他能否不追问直接执行其中任意 5 条</li>
+</ul>
+
+<h3>6.5 本周常见错误汇总</h3>
+<table>
+<tr><th style="width:38%">错误</th><th>修正</th></tr>
+<tr><td>用例写成功能点罗列</td><td>每条后面强制加一列「设计方法」，写不出就说明是拍脑袋想的</td></tr>
+<tr><td>只测正常路径</td><td>检查非法迁移、无效等价类、异常备选流合计是否达到 30 条</td></tr>
+<tr><td>预期结果写「提示正确」</td><td>写完整状态：提示内容、数据变化、掉落物是否保留、服务端是否记账</td></tr>
+<tr><td>漏掉时间边界</td><td>凡是限时、签到、任务重置，都要有 23:59:59 与 00:00:00 两条</td></tr>
+<tr><td>忽略重登与多端</td><td>每条涉及数据变更的用例，都问一句「重登后还对吗」「另一端会怎样」</td></tr>
+<tr><td>把 100 条当成 KPI</td><td>40 条有推导的用例，价值高于 100 条复制粘贴的用例</td></tr>
+</table>
+
+<p class="foot">本学习包为教学材料，背包系统的规则设定（容量 200、堆叠上限 99、整理规则等）均为假设，不代表任何具体产品的实际逻辑。实际工作中请以策划案与需求文档为准。</p>
+
+</body>
+</html>

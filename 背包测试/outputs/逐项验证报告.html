@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>逐项验证报告 · 背包系统 100 条用例</title>
+<style>
+@page { size: A4; margin: 14mm 12mm; }
+* { box-sizing: border-box; }
+body { font-family: "Microsoft YaHei","PingFang SC",-apple-system,"Segoe UI",sans-serif; color:#1a1a1a;
+  background:#fff; font-size:10.5pt; line-height:1.6; margin:0 auto; padding:24px 30px; max-width:960px; }
+h1 { font-size:19pt; margin:0 0 2px; font-weight:600; }
+.sub { color:#666; font-size:9.5pt; margin:0 0 5px; }
+.meta { color:#888; font-size:9pt; margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid #e5e5e5; }
+h2 { font-size:13pt; margin:22px 0 8px; padding:5px 0 5px 10px; border-left:4px solid #1a1a1a;
+  background:#f5f5f3; font-weight:600; page-break-after:avoid; }
+p { margin:6px 0; }
+table { width:100%; border-collapse:collapse; font-size:9pt; margin:8px 0 12px; page-break-inside:avoid; }
+th { background:#f3f3f1; text-align:left; padding:5px 7px; border:1px solid #ccc; font-weight:600; }
+td { padding:5px 7px; border:1px solid #ccc; vertical-align:top; }
+td.c { text-align:center; white-space:nowrap; } td.small { font-size:8.3pt; }
+table.long { page-break-inside:auto; font-size:8.2pt; }
+table.long thead { display:table-header-group; }
+table.long tr { page-break-inside:avoid; }
+tr.grp td { background:#ebebe8; font-weight:600; }
+.concl { background:#eef4ef; border-left:3px solid #0f6e56; padding:8px 12px; margin:8px 0; }
+.one { background:#f7f7f4; border-left:3px solid #444; padding:8px 12px; margin:8px 0; }
+.pit { background:#fdf6f6; border-left:3px solid #a32d2d; padding:8px 12px; margin:8px 0; }
+.chart { border:1px solid #e2e5ea; border-radius:5px; padding:6px; margin:8px 0 12px; }
+.chart svg { display:block; width:100%; height:auto; }
+.good { color:#0f6e56; } .bad { color:#a32d2d; }
+.badge { font-size:8pt; padding:1px 5px; border-radius:3px; font-weight:600; white-space:nowrap; }
+.badge.PASS { color:#0f6e56; background:#eaf4ef; }
+.badge.FAIL { color:#a32d2d; background:#fdf0f0; }
+.badge.MANUAL { color:#8a6d1f; background:#fbf5e6; }
+.tag { font-size:7.5pt; color:#3a5a8c; border:1px solid #cbd6e8; border-radius:3px; padding:0 3px; margin-left:4px; }
+.mono { font-family:Consolas,"Courier New",monospace; font-weight:600; color:#0c447c; }
+.actual { font-family:Consolas,"Courier New",monospace; word-break:break-word; color:#333; }
+.hint { color:#777; font-size:9pt; }
+ul { margin:6px 0; padding-left:22px; } li { margin:3px 0; }
+.foot { margin-top:20px; padding-top:8px; border-top:1px solid #e5e5e5; color:#999; font-size:8.5pt; }
+@media print { body { padding:0; max-width:none; } }
+</style></head><body>
+<h1>背包系统 · 100 条用例逐项验证报告</h1>
+<p class="sub">依据《第一周学习包：测试理论与背包系统样例》Day 1–7 · 真实执行，非样例罗列</p>
+<p class="meta">生成时间 2026-11-09 18:36:34 ｜ 引擎 v1.0.0 ｜ 用例元数据自动提取自源文档 ｜ 离线自包含</p>
+<h2>一、验收结论</h2>
+<div class="concl"><b>验收通过。</b>基准版共 100 条：98 条 PASS、0 条 FAIL、2 条 MANUAL；注入 6 个文档所述典型缺陷后产生 18 条 FAIL；6 项单独反向注入测试全部被预期用例捕获，证明测试集具备真实检错能力。</div>
+<table><thead><tr><th style="width:34%">验收项</th><th style="width:14%">结果</th><th>说明</th></tr></thead><tbody>
+<tr><td>用例元数据与源文档一致</td><td class="c good"><b>通过</b></td><td>自动提取 6 组共 100 条，分组 18/22/16/12/16/16</td></tr>
+<tr><td>100 条均具备可执行断言</td><td class="c good"><b>通过</b></td><td>缺失 0 条、孤立 0 条</td></tr>
+<tr><td>基准版无失败</td><td class="c good"><b>通过</b></td><td>PASS 98 / FAIL 0 / MANUAL 2</td></tr>
+<tr><td>反向注入测试有效</td><td class="c good"><b>通过</b></td><td>逐个注入 6 个缺陷，均被预期用例捕获</td></tr>
+<tr><td>缺陷注入可被检出</td><td class="c good"><b>通过</b></td><td>全量注入后 18 条用例失败</td></tr>
+</tbody></table>
+<h2>二、测试对象与结果口径</h2>
+<p><b>被测对象：</b>一个服务端权威 + 客户端投影的背包系统引擎。容量 200 格、堆叠上限 99、六态道具（未获得 / 持有 / 使用中 / 已消耗 / 已锁定 / 已过期）、整理遵循判定表 R1–R8；模拟网络断连与重放、服务器时钟、持久化与重进、多端并发、热更新、跨服与回档。交互游戏场景与自动化验证<b>共用同一份引擎源码</b>，避免"演示一套、被测另一套"。</p>
+<table><thead><tr><th style="width:16%">口径</th><th style="width:10%">条数</th><th>含义</th></tr></thead><tbody>
+<tr><td>自动断言 auto</td><td class="c">91</td><td>逻辑层真实执行，PASS / FAIL 由程序化断言判定，报告附实际观测值</td></tr>
+<tr><td>代理验证 proxy</td><td class="c">7</td><td>布局算法、对象计数、对比度计算等可逻辑验证的指标；<b>不替代真机</b>兼容性 / 性能测试</td></tr>
+<tr><td>人工 MANUAL</td><td class="c">2</td><td>F06 滚动帧率、F13 音效与震动：需目标机型与人工听感 / 触觉确认，已给出检查清单</td></tr>
+</tbody></table>
+<div class="pit"><b>诚实边界：</b>F 组中 7 条"代理验证"只证明算法层不溢出、不泄漏、对比度达标，不能等同于真机渲染与帧率验收。报告不把它们标为真机通过。</div>
+<h2>三、覆盖分析（对照源文档 6.3 分布自检）</h2>
+<div class="chart"><svg viewBox="0 0 680 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="各模块用例数与通过数">
+<rect x="0" y="0" width="680" height="268" fill="#ffffff"/>
+<text x="340" y="16" text-anchor="middle" font-size="12" font-weight="600" fill="#1a1d24">模块分布：用例总数 / 自动通过数</text>
+<rect x="60" y="26" width="11" height="9" fill="#9fb6d4"/>
+<text x="76" y="34" text-anchor="start" font-size="10" fill="#555">用例总数</text>
+<rect x="152" y="26" width="11" height="9" fill="#0f6e56"/>
+<text x="168" y="34" text-anchor="start" font-size="10" fill="#555">自动通过</text>
+<line x1="60" y1="212.0" x2="662" y2="212.0" stroke="#e6e9ee" stroke-width="1"/>
+<text x="52" y="215.5" text-anchor="end" font-size="9" fill="#888">0</text>
+<line x1="60" y1="170.0" x2="662" y2="170.0" stroke="#e6e9ee" stroke-width="1"/>
+<text x="52" y="173.5" text-anchor="end" font-size="9" fill="#888">6</text>
+<line x1="60" y1="128.0" x2="662" y2="128.0" stroke="#e6e9ee" stroke-width="1"/>
+<text x="52" y="131.5" text-anchor="end" font-size="9" fill="#888">11</text>
+<line x1="60" y1="86.0" x2="662" y2="86.0" stroke="#e6e9ee" stroke-width="1"/>
+<text x="52" y="89.5" text-anchor="end" font-size="9" fill="#888">16</text>
+<line x1="60" y1="44.0" x2="662" y2="44.0" stroke="#e6e9ee" stroke-width="1"/>
+<text x="52" y="47.5" text-anchor="end" font-size="9" fill="#888">22</text>
+<line x1="60" y1="212" x2="662" y2="212" stroke="#b9c0ca" stroke-width="1"/>
+<rect x="84.2" y="74.5" width="24.0" height="137.5" fill="#9fb6d4" rx="2"/>
+<rect x="112.2" y="74.5" width="24.0" height="137.5" fill="#0f6e56" rx="2"/>
+<text x="96.2" y="70.5" text-anchor="middle" font-size="9" fill="#333">18</text>
+<text x="124.2" y="70.5" text-anchor="middle" font-size="9" fill="#333">18</text>
+<text x="110.2" y="228.0" text-anchor="middle" font-size="10" fill="#333">A</text>
+<text x="110.2" y="242.0" text-anchor="middle" font-size="8.5" fill="#999">容量与拾取</text>
+<rect x="184.5" y="44.0" width="24.0" height="168.0" fill="#9fb6d4" rx="2"/>
+<rect x="212.5" y="44.0" width="24.0" height="168.0" fill="#0f6e56" rx="2"/>
+<text x="196.5" y="40.0" text-anchor="middle" font-size="9" fill="#333">22</text>
+<text x="224.5" y="40.0" text-anchor="middle" font-size="9" fill="#333">22</text>
+<text x="210.5" y="228.0" text-anchor="middle" font-size="10" fill="#333">B</text>
+<text x="210.5" y="242.0" text-anchor="middle" font-size="8.5" fill="#999">道具操作</text>
+<rect x="284.8" y="89.8" width="24.0" height="122.2" fill="#9fb6d4" rx="2"/>
+<rect x="312.8" y="89.8" width="24.0" height="122.2" fill="#0f6e56" rx="2"/>
+<text x="296.8" y="85.8" text-anchor="middle" font-size="9" fill="#333">16</text>
+<text x="324.8" y="85.8" text-anchor="middle" font-size="9" fill="#333">16</text>
+<text x="310.8" y="228.0" text-anchor="middle" font-size="10" fill="#333">C</text>
+<text x="310.8" y="242.0" text-anchor="middle" font-size="8.5" fill="#999">状态与迁移</text>
+<rect x="385.2" y="120.4" width="24.0" height="91.6" fill="#9fb6d4" rx="2"/>
+<rect x="413.2" y="120.4" width="24.0" height="91.6" fill="#0f6e56" rx="2"/>
+<text x="397.2" y="116.4" text-anchor="middle" font-size="9" fill="#333">12</text>
+<text x="425.2" y="116.4" text-anchor="middle" font-size="9" fill="#333">12</text>
+<text x="411.2" y="228.0" text-anchor="middle" font-size="10" fill="#333">D</text>
+<text x="411.2" y="242.0" text-anchor="middle" font-size="8.5" fill="#999">判定表：整理规则</text>
+<rect x="485.5" y="89.8" width="24.0" height="122.2" fill="#9fb6d4" rx="2"/>
+<rect x="513.5" y="89.8" width="24.0" height="122.2" fill="#0f6e56" rx="2"/>
+<text x="497.5" y="85.8" text-anchor="middle" font-size="9" fill="#333">16</text>
+<text x="525.5" y="85.8" text-anchor="middle" font-size="9" fill="#333">16</text>
+<text x="511.5" y="228.0" text-anchor="middle" font-size="10" fill="#333">E</text>
+<text x="511.5" y="242.0" text-anchor="middle" font-size="8.5" fill="#999">场景法：完整链路</text>
+<rect x="585.8" y="89.8" width="24.0" height="122.2" fill="#9fb6d4" rx="2"/>
+<rect x="613.8" y="105.1" width="24.0" height="106.9" fill="#0f6e56" rx="2"/>
+<text x="597.8" y="85.8" text-anchor="middle" font-size="9" fill="#333">16</text>
+<text x="625.8" y="101.1" text-anchor="middle" font-size="9" fill="#333">14</text>
+<text x="611.8" y="228.0" text-anchor="middle" font-size="10" fill="#333">F</text>
+<text x="611.8" y="242.0" text-anchor="middle" font-size="8.5" fill="#999">兼容、性能与界面</text>
+</svg></div>
+<table><thead><tr><th style="width:30%">检查项</th><th style="width:16%">文档应有</th><th style="width:14%">实测</th><th>判定</th></tr></thead><tbody>
+<tr><td>用例总数</td><td class="c">100 条</td><td class="c"><b>100 条</b></td><td class="good">符合｜编号 / 标题 / 方法 / 优先级逐条对齐源文档</td></tr>
+<tr><td>五种方法覆盖</td><td class="c">全部出现，每种 ≥ 8 条</td><td class="c"><b>边界值20、等价类10、判定表12、状态迁移13、场景法31</b></td><td class="good">符合｜另有 1 条为多方法组合（如「边界值+场景法」）</td></tr>
+<tr><td>非法路径占比</td><td class="c">≥ 30 条</td><td class="c"><b>21 条（严格）/ 24 条（宽松）</b></td><td class="bad">偏离｜严格=method 含非法/无效/异常；宽松另含标题中的幂等、重复、越界类</td></tr>
+<tr><td>P0 用例</td><td class="c">约 20 条</td><td class="c"><b>38 条</b></td><td class="bad">偏离｜源清单在并发、异常、数据一致性上标注了较多 P0</td></tr>
+<tr><td>模块覆盖</td><td class="c">A–F 六组</td><td class="c"><b>6 组</b></td><td class="good">符合｜A18 / B22 / C16 / D12 / E16 / F16</td></tr>
+</tbody></table>
+<div class="pit"><b>发现：源文档 6.3 的自检标准与其 6.2 清单并不自洽。</b>严格按文档口径（设计方法列标注为「非法 / 无效 / 异常」）统计只有 21 条，即使把标题中的幂等、重复、越界类一并计入也只有 24 条，均低于自检要求的 30 条；P0 实际为 38 条，也明显多于「约 20 条」。这两处偏差来自<b>源文档清单本身的标注</b>，不是本报告的生成偏差——所有编号、方法、优先级均逐条取自源文档，未作任何改写。这恰是逐项复核的价值：它能把「看起来合格」的清单与它自己宣称的标准对上，暴露出需要补写的异常用例与需要重新分级的 P0。</div>
+<h2>四、逐项验证结果（100 条）</h2>
+<p class="hint">「实际观测值」为当次真实执行产生，包含关键状态量；完整前置条件、操作步骤与预期结果见随附的交互页面，可在浏览器中逐条展开。</p>
+<table class="long"><thead><tr><th style="width:7%">编号</th><th style="width:26%">用例标题</th><th style="width:13%">设计方法</th><th style="width:7%">优先级</th><th style="width:8%">状态</th><th style="width:39%">实际观测值</th></tr></thead><tbody>
+<tr class="grp"><td colspan="6">A 容量与拾取（18 条：PASS 18 / FAIL 0 / MANUAL 0）</td></tr>
+<tr class="case-row"><td class="c mono">A01</td><td>空背包首次拾取单个道具</td><td class="c small">边界值·零点</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INSERTED；服务端=1格；客户端=1格；地面=0个</td></tr>
+<tr class="case-row"><td class="c mono">A02</td><td>背包仅 1 个道具时拾取</td><td class="c small">边界值·内点</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INSERTED；背包=2格；I1002数量=1</td></tr>
+<tr class="case-row"><td class="c mono">A03</td><td>背包 199 格时拾取第 200 个</td><td class="c small">边界值·内点</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INSERTED；背包=200格（上限200）</td></tr>
+<tr class="case-row"><td class="c mono">A04</td><td>背包 200 格满时拾取第 201 个</td><td class="c small">边界值·上点</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=BAG_FULL；地面保留=1个；背包=200格；客户端=200格</td></tr>
+<tr class="case-row"><td class="c mono">A05</td><td>背包满时批量拾取（部分可放入）</td><td class="c small">边界值+场景法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">成功=2，拒绝=2；地面剩余=2个；背包=200格；I1001总数=130</td></tr>
+<tr class="case-row"><td class="c mono">A06</td><td>背包满时系统邮件发放道具</td><td class="c small">边界值</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=GRANT_TO_MAIL；邮件=1封；背包=200格</td></tr>
+<tr class="case-row"><td class="c mono">A07</td><td>背包满时商城购买道具</td><td class="c small">边界值</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">扣款=20；code=GRANT_TO_MAIL；邮件补发=1封；静默丢失=false</td></tr>
+<tr class="case-row"><td class="c mono">A08</td><td>扩容后立即再次拾取</td><td class="c small">状态迁移</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">扩容=CAPACITY_SET；拾取=INSERTED；容量=201；背包=201格</td></tr>
+<tr class="case-row"><td class="c mono">A09</td><td>缩容后道具数量超过新上限</td><td class="c small">状态迁移·非法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=SHRINK_BLOCKED；容量=200；道具=200个</td></tr>
+<tr class="case-row"><td class="c mono">A10</td><td>单次拾取数量超过上限（如 300 个）</td><td class="c small">边界值·离点</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=QTY_OVER_LIMIT；背包=0格；地面=1个</td></tr>
+<tr class="case-row"><td class="c mono">A11</td><td>拾取数量为 0 的道具堆</td><td class="c small">等价类·无效</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INVALID_QTY；背包=0格</td></tr>
+<tr class="case-row"><td class="c mono">A12</td><td>拾取数量为负数的异常数据</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INVALID_QTY；负数道具=false</td></tr>
+<tr class="case-row"><td class="c mono">A13</td><td>拾取不存在的道具 ID</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INVALID_ITEM_ID；背包=0格</td></tr>
+<tr class="case-row"><td class="c mono">A14</td><td>拾取已下架或已过期的道具 ID</td><td class="c small">等价类·无效</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INVALID_ITEM_ID；背包=0格</td></tr>
+<tr class="case-row"><td class="c mono">A15</td><td>快速连续点击拾取 10 次</td><td class="c small">场景法·重复</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">流水=1条；背包=1格；地面=0个；成功响应=10次</td></tr>
+<tr class="case-row"><td class="c mono">A16</td><td>拾取过程中断网</td><td class="c small">场景法·异常</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">断网响应=OFFLINE；重连后在包=1、在地面=0、合计=1；前后端格数一致=true</td></tr>
+<tr class="case-row"><td class="c mono">A17</td><td>拾取成功后杀进程重进</td><td class="c small">场景法·异常</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">服务端 I1001=1；重进后客户端=1；总格数=101</td></tr>
+<tr class="case-row"><td class="c mono">A18</td><td>拾取过程中切换账号</td><td class="c small">场景法·异常</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">切换前响应=OFFLINE；B账号背包=0格/掉落=0个；A账号切回后地面=1个、背包=0格</td></tr>
+<tr class="grp"><td colspan="6">B 道具操作（22 条：PASS 22 / FAIL 0 / MANUAL 0）</td></tr>
+<tr class="case-row"><td class="c mono">B01</td><td>使用普通消耗品</td><td class="c small">场景法·基本流</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=USED；效果=1次；迁移=持有→使用中→已消耗</td></tr>
+<tr class="case-row"><td class="c mono">B02</td><td>使用剩余次数为 1 的道具</td><td class="c small">边界值</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=USED；剩余次数=0；道具仍在=false</td></tr>
+<tr class="case-row"><td class="c mono">B03</td><td>使用剩余次数为 0 的道具</td><td class="c small">边界值·零点</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=USES_EXHAUSTED；效果=0次；消耗流水=0条</td></tr>
+<tr class="case-row"><td class="c mono">B04</td><td>连续使用同道具直至耗尽</td><td class="c small">边界值</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">响应=USED/USED/USED/ITEM_NOT_FOUND；效果合计=3次；道具仍在=false</td></tr>
+<tr class="case-row"><td class="c mono">B05</td><td>使用后道具是否正确消失</td><td class="c small">功能</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">服务端存在=false；客户端存在=false</td></tr>
+<tr class="case-row"><td class="c mono">B06</td><td>等级不足时使用有等级限制的道具</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=LEVEL_LOW；效果=0次；道具保留=true</td></tr>
+<tr class="case-row"><td class="c mono">B07</td><td>职业不符时使用限定职业道具</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=JOB_MISMATCH；效果=0次；道具保留=true</td></tr>
+<tr class="case-row"><td class="c mono">B08</td><td>冷却期间再次使用</td><td class="c small">状态迁移·非法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">响应=USED/COOLDOWN/USED；效果=2次；剩余数量=0</td></tr>
+<tr class="case-row"><td class="c mono">B09</td><td>丢弃道具并确认</td><td class="c small">场景法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=DISCARDED；背包=0格；回收记录=1条</td></tr>
+<tr class="case-row"><td class="c mono">B10</td><td>丢弃时点击取消</td><td class="c small">场景法·备选流</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=CANCELLED；背包=1格；数量=1</td></tr>
+<tr class="case-row"><td class="c mono">B11</td><td>丢弃已锁定道具</td><td class="c small">判定表</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=LOCKED；背包=1格；状态=已锁定</td></tr>
+<tr class="case-row"><td class="c mono">B12</td><td>丢弃数量为 0</td><td class="c small">等价类·无效</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INVALID_QTY；背包=1格；丢弃流水=0条</td></tr>
+<tr class="case-row"><td class="c mono">B13</td><td>批量丢弃中混有锁定道具</td><td class="c small">判定表</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">丢弃=2个；跳过=1个；剩余=1个（状态已锁定）</td></tr>
+<tr class="case-row"><td class="c mono">B14</td><td>出售道具后金币正确增加</td><td class="c small">功能</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">金币=1020（预期1020）；流水gain=20</td></tr>
+<tr class="case-row"><td class="c mono">B15</td><td>出售后金币将超过持有上限</td><td class="c small">边界值</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=GOLD_OVER_CAP；金币=999999994；道具保留=true</td></tr>
+<tr class="case-row"><td class="c mono">B16</td><td>出售已绑定或不可交易道具</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=NOT_TRADEABLE；金币=1000；道具保留=true</td></tr>
+<tr class="case-row"><td class="c mono">B17</td><td>出售后立即回购</td><td class="c small">场景法</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=BUYBACK；金币=1000；I1002数量=1</td></tr>
+<tr class="case-row"><td class="c mono">B18</td><td>堆叠已达上限时拾取同类道具</td><td class="c small">边界值</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=INSERTED；堆叠=99+1；总数=100</td></tr>
+<tr class="case-row"><td class="c mono">B19</td><td>将堆叠道具拆分为两堆</td><td class="c small">功能</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=SPLIT；两堆=4+6；总数=10</td></tr>
+<tr class="case-row"><td class="c mono">B20</td><td>拆分数量等于总数量</td><td class="c small">边界值</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=SPLIT_INVALID；堆数=1；原堆数量=10</td></tr>
+<tr class="case-row"><td class="c mono">B21</td><td>拆分数量大于总数量</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=SPLIT_INVALID；原堆数量=10；负数堆=无</td></tr>
+<tr class="case-row"><td class="c mono">B22</td><td>拖放道具到非法格子</td><td class="c small">状态迁移·非法</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=ILLEGAL_SLOT；格位=0（预期0）；道具数=1</td></tr>
+<tr class="grp"><td colspan="6">C 状态与迁移（16 条：PASS 16 / FAIL 0 / MANUAL 0）</td></tr>
+<tr class="case-row"><td class="c mono">C01</td><td>未获得 → 持有（拾取）</td><td class="c small">状态迁移·合法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">迁移=未获得→持有；当前状态=持有</td></tr>
+<tr class="case-row"><td class="c mono">C02</td><td>持有 → 使用中（使用）</td><td class="c small">状态迁移·合法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">迁移=持有→使用中→已消耗</td></tr>
+<tr class="case-row"><td class="c mono">C03</td><td>使用中 → 已消耗</td><td class="c small">状态迁移·合法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">迁移=持有→使用中→已消耗；最终状态=已消耗；效果=1次</td></tr>
+<tr class="case-row"><td class="c mono">C04</td><td>持有 → 已过期（限时到期）</td><td class="c small">状态迁移·合法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">状态=已过期；倒计时=0ms</td></tr>
+<tr class="case-row"><td class="c mono">C05</td><td>持有 → 已锁定</td><td class="c small">状态迁移·合法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=LOCKED；状态=已锁定；格位=0</td></tr>
+<tr class="case-row"><td class="c mono">C06</td><td>已锁定 → 持有（解锁）</td><td class="c small">状态迁移·合法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=UNLOCKED；状态=持有；数量=1</td></tr>
+<tr class="case-row"><td class="c mono">C07</td><td>已消耗 → 持有（非法回退）</td><td class="c small">状态迁移·非法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=ILLEGAL_STATE；状态=已消耗；效果=0次</td></tr>
+<tr class="case-row"><td class="c mono">C08</td><td>已过期 → 使用中（非法使用）</td><td class="c small">状态迁移·非法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">界面显示状态=持有；使用响应=EXPIRED；效果=0次；服务端状态=已过期</td></tr>
+<tr class="case-row"><td class="c mono">C09</td><td>已锁定 → 已消耗（非法使用）</td><td class="c small">状态迁移·非法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=LOCKED；状态=已锁定；效果=0次</td></tr>
+<tr class="case-row"><td class="c mono">C10</td><td>跨天 00:00:00 限时道具到期</td><td class="c small">边界值·时间</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">23:59:59倒计时=1000ms；00:00:00倒计时=0ms；状态=已过期；使用=EXPIRED</td></tr>
+<tr class="case-row"><td class="c mono">C11</td><td>23:59:59 使用限时道具</td><td class="c small">边界值·时间</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">23:59:59使用=USED；效果=1次；状态=已消耗</td></tr>
+<tr class="case-row"><td class="c mono">C12</td><td>服务器时间与本地时间不一致</td><td class="c small">边界值</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">客户端时间判定为已过期=false；服务端响应=EXPIRED；效果=0次</td></tr>
+<tr class="case-row"><td class="c mono">C13</td><td>切后台 5 分钟后返回</td><td class="c small">场景法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">返回后界面状态=已过期；倒计时=0ms；使用=EXPIRED</td></tr>
+<tr class="case-row"><td class="c mono">C14</td><td>断线重连后道具状态一致</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">客户端数量=2，服务端数量=2；状态=持有/持有；格数一致=true</td></tr>
+<tr class="case-row"><td class="c mono">C15</td><td>多端同时登录操作同一道具</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">成功请求=1/2；响应=USED/IN_FLIGHT；效果=1次；剩余=4</td></tr>
+<tr class="case-row"><td class="c mono">C16</td><td>重进游戏后状态恢复</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">重进前=U00001:1:已锁定:0|U00002:2:持有:1；重进后=U00001:1:已锁定:0|U00002:2:持有:1；效果次数=1</td></tr>
+<tr class="grp"><td colspan="6">D 判定表：整理规则（12 条：PASS 12 / FAIL 0 / MANUAL 0）</td></tr>
+<tr class="case-row"><td class="c mono">D01</td><td>有空格 + 无可堆叠 + 无锁定</td><td class="c small">判定表 R1</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">规则=R1；合并=0；道具格数=4→4</td></tr>
+<tr class="case-row"><td class="c mono">D02</td><td>有空格 + 无可堆叠 + 有锁定</td><td class="c small">判定表 R2</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">规则=R2；锁定格位=3→3；锁定移动数=0</td></tr>
+<tr class="case-row"><td class="c mono">D03</td><td>有空格 + 有可堆叠 + 无锁定</td><td class="c small">判定表 R3</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">规则=R3；合并=3个；I1001总数=6→6</td></tr>
+<tr class="case-row"><td class="c mono">D04</td><td>有空格 + 有可堆叠 + 有锁定</td><td class="c small">判定表 R4</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">规则=R4；合并=3；锁定格位=3→3；锁定数量=1→1；ID种类集合[I1001,I1009]一致=true；总数量=8→8</td></tr>
+<tr class="case-row"><td class="c mono">D05</td><td>无空格 + 无可堆叠 + 无锁定</td><td class="c small">判定表 R5</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=NO_SORTABLE；规则=R5；数据未变=true</td></tr>
+<tr class="case-row"><td class="c mono">D06</td><td>无空格 + 无可堆叠 + 有锁定</td><td class="c small">判定表 R6</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=NO_SORTABLE；规则=R6；锁定格位=7；数据未变=true</td></tr>
+<tr class="case-row"><td class="c mono">D07</td><td>无空格 + 有可堆叠 + 无锁定</td><td class="c small">判定表 R7</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">规则=R7；合并=3；格数=8→7（腾出空格）；总数量=12→12</td></tr>
+<tr class="case-row"><td class="c mono">D08</td><td>无空格 + 有可堆叠 + 有锁定</td><td class="c small">判定表 R8</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">规则=R8；合并=3；锁定格位=7→7；总数量=12→12</td></tr>
+<tr class="case-row"><td class="c mono">D09</td><td>全部为锁定道具时整理</td><td class="c small">判定表·边界</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=NO_SORTABLE；规则=R6；格位未变=true</td></tr>
+<tr class="case-row"><td class="c mono">D10</td><td>全部为堆叠已满道具时整理</td><td class="c small">判定表·边界</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=NO_SORTABLE；规则=R5；堆数=4；无异常堆=true</td></tr>
+<tr class="case-row"><td class="c mono">D11</td><td>整理过程中断网</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">断网响应=OFFLINE；断网期间总数未变=true；重连后总数=8→8</td></tr>
+<tr class="case-row"><td class="c mono">D12</td><td>整理前后道具总数与 ID 不变</td><td class="c small">场景法·校验</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">数量映射={&quot;I1001&quot;:6,&quot;I1009&quot;:2}→{&quot;I1001&quot;:6,&quot;I1009&quot;:2}；ID集合一致=true；锁定格位一致=true</td></tr>
+<tr class="grp"><td colspan="6">E 场景法：完整链路（16 条：PASS 16 / FAIL 0 / MANUAL 0）</td></tr>
+<tr class="case-row"><td class="c mono">E01</td><td>基本流：拾取→查看→使用→消耗</td><td class="c small">场景法·基本流</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">流水=pickup→use；效果=1次；背包=0格</td></tr>
+<tr class="case-row"><td class="c mono">E02</td><td>拾取→丢弃→找回</td><td class="c small">场景法·备选流</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">找回=RECOVERED；I1001数量=1；背包=1格</td></tr>
+<tr class="case-row"><td class="c mono">E03</td><td>拾取→锁定→批量整理</td><td class="c small">场景法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">整理=SORTED（R2）；锁定格位=0→0；I1001总数=30→30</td></tr>
+<tr class="case-row"><td class="c mono">E04</td><td>商城购买→背包已满→邮件补发</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">金币=1000→980；邮件=1封（背包已满，邮件补发）；静默丢失=false</td></tr>
+<tr class="case-row"><td class="c mono">E05</td><td>副本掉落→自动拾取→满包提示</td><td class="c small">场景法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=BAG_FULL；提示=&quot;背包已满，掉落物保留在地面&quot;；地面=1个；背包=200格</td></tr>
+<tr class="case-row"><td class="c mono">E06</td><td>交易接收→到账→状态刷新</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">code=GRANTED；服务端数量=1；客户端显示=1</td></tr>
+<tr class="case-row"><td class="c mono">E07</td><td>使用过程中断网</td><td class="c small">场景法·异常</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">断网响应=OFFLINE；断网前数量=2、效果=0；重连后数量=1、效果=1；一致性=true</td></tr>
+<tr class="case-row"><td class="c mono">E08</td><td>使用过程中杀进程</td><td class="c small">场景法·异常</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">服务端数量=1；效果=1次；重进后客户端数量=1</td></tr>
+<tr class="case-row"><td class="c mono">E09</td><td>使用回调重复推送</td><td class="c small">场景法·幂等</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">响应=USED/USED/USED；效果=1次；剩余=4；使用流水=1条</td></tr>
+<tr class="case-row"><td class="c mono">E10</td><td>弱网下重复点击使用</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">响应=USED/IN_FLIGHT；效果=1次；剩余=4</td></tr>
+<tr class="case-row"><td class="c mono">E11</td><td>后台推送道具时前台无刷新</td><td class="c small">场景法</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">推送=GRANTED；服务端=1格、前台=0格（落后1）；刷新后一致=true</td></tr>
+<tr class="case-row"><td class="c mono">E12</td><td>热更新后背包数据兼容</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">热更新=HOT_UPDATED；补字段=2个；版本=2.4.2；使用=USED</td></tr>
+<tr class="case-row"><td class="c mono">E13</td><td>老版本存档在新版本打开</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">加载=LEGACY_LOADED；补齐 slot=0、schema=1、uses=1；使用=USED；剩余=1</td></tr>
+<tr class="case-row"><td class="c mono">E14</td><td>跨服转区后道具保留</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">转区=TRANSFERRED；目标服=S2；数据一致=true</td></tr>
+<tr class="case-row"><td class="c mono">E15</td><td>账号封禁期间道具到期</td><td class="c small">场景法</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">解封后状态=已过期；倒计时=0ms；封禁标记=false</td></tr>
+<tr class="case-row"><td class="c mono">E16</td><td>服务器回档后道具状态</td><td class="c small">场景法</td><td class="c">P0</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">回档前数量=2、效果=1；回档后数量=3、效果=0</td></tr>
+<tr class="grp"><td colspan="6">F 兼容、性能与界面（16 条：PASS 14 / FAIL 0 / MANUAL 2）</td></tr>
+<tr class="case-row"><td class="c mono">F01</td><td>小屏幕分辨率下背包布局<span class="tag">代理</span></td><td class="c small">兼容性</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">视口=720px；列数=15；内容宽=680px；溢出=0px；末列裁切=false</td></tr>
+<tr class="case-row"><td class="c mono">F02</td><td>平板横竖屏切换<span class="tag">代理</span></td><td class="c small">兼容性</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">横屏=22列/溢出0px；竖屏=17列/溢出0px</td></tr>
+<tr class="case-row"><td class="c mono">F03</td><td>折叠屏展开与折叠<span class="tag">代理</span></td><td class="c small">兼容性</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">折叠=13列/溢出0px；展开=24列/溢出0px</td></tr>
+<tr class="case-row"><td class="c mono">F04</td><td>低端机打开 200 格背包耗时<span class="tag">代理</span></td><td class="c small">性能</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">打开耗时=0ms（阈值&lt;500ms）；视图格数=200</td></tr>
+<tr class="case-row"><td class="c mono">F05</td><td>连续开关背包 50 次内存增长<span class="tag">代理</span></td><td class="c small">性能</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">50次开关后监听器=0（基线0）；缓存对象=0（基线0）</td></tr>
+<tr class="case-row"><td class="c mono">F06</td><td>背包快速滚动帧率<span class="tag">人工</span></td><td class="c small">性能</td><td class="c">P2</td><td class="c"><span class="badge MANUAL">MANUAL</span></td><td class="actual small">需真机/人工判定：真机验证项：需在目标机型上采集 FPS 曲线与 GPU 耗时，记录最低帧率、掉帧次数与阈值；纯逻辑场景无法模拟刷新率与合成器行为。</td></tr>
+<tr class="case-row"><td class="c mono">F07</td><td>道具图标加载失败的占位</td><td class="c small">功能</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">占位图启用=true；资源=builtin://icon_missing</td></tr>
+<tr class="case-row"><td class="c mono">F08</td><td>道具名称超长时的显示</td><td class="c small">边界值</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">原长=38字符；截断后=13字符；结果=&quot;超长道具名称测试用字符串…&quot;</td></tr>
+<tr class="case-row"><td class="c mono">F09</td><td>道具名称含特殊字符</td><td class="c small">等价类·无效</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">三处一致=true；含可执行&lt;script&gt;=false；转义后片段=药%水&amp;#39;;&amp;lt;script&amp;gt;alert(1</td></tr>
+<tr class="case-row"><td class="c mono">F10</td><td>多语言下名称截断</td><td class="c small">本地化</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">截断结果=&quot;中文Name混合…&quot;；码点数=9；替换字符=false</td></tr>
+<tr class="case-row"><td class="c mono">F11</td><td>数量超过显示上限（999999+）</td><td class="c small">边界值</td><td class="c">P1</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">formatQty(1000000)=&quot;999999+&quot;</td></tr>
+<tr class="case-row"><td class="c mono">F12</td><td>数量为 0 时不显示角标</td><td class="c small">边界值</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">formatQty(0)=&quot;&quot;（空字符串即不渲染角标）</td></tr>
+<tr class="case-row"><td class="c mono">F13</td><td>使用时的音效与震动反馈<span class="tag">人工</span></td><td class="c small">UI</td><td class="c">P3</td><td class="c"><span class="badge MANUAL">MANUAL</span></td><td class="actual small">需真机/人工判定：真机验证项：需人工听感与触觉确认，并覆盖静音/勿扰/无障碍设置组合；纯逻辑场景无音频与马达接口。</td></tr>
+<tr class="case-row"><td class="c mono">F14</td><td>新手引导期间背包入口</td><td class="c small">场景法</td><td class="c">P2</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">引导中锁定=true（原因&quot;新手引导期间入口按需求锁定&quot;）；引导后可进入=true</td></tr>
+<tr class="case-row"><td class="c mono">F15</td><td>无障碍与大字体模式<span class="tag">代理</span></td><td class="c small">兼容性</td><td class="c">P3</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">字级=1.5；单元=60px；列数=10；溢出=0px</td></tr>
+<tr class="case-row"><td class="c mono">F16</td><td>深色模式下图标对比度<span class="tag">代理</span></td><td class="c small">兼容性</td><td class="c">P3</td><td class="c"><span class="badge PASS">PASS</span></td><td class="actual small">对比度=14.02:1（阈值≥4.5）</td></tr>
+</tbody></table>
+<h2>五、反向注入测试（证明测试集不是"永远通过"的空壳）</h2>
+<p>将文档 A04 / C08 / E09 / D04 / A07 / F01 对应的 6 个真实缺陷<b>逐个单独注入</b>引擎并重跑全部 100 条，检查是否有预期用例转为 FAIL。</p>
+<table><thead><tr><th style="width:26%">注入的缺陷</th><th style="width:15%">预期捕获用例</th><th>实际失败用例</th><th style="width:10%">结论</th></tr></thead><tbody>
+<tr><td>swallowDrop</td><td class="c">A04</td><td class="small">A04, A05, E05</td><td class="c good"><b>捕获</b></td></tr>
+<tr><td>noExpireCheck</td><td class="c">C08</td><td class="small">C08, C10, C12, C13</td><td class="c good"><b>捕获</b></td></tr>
+<tr><td>noIdempotency</td><td class="c">E09</td><td class="small">E09</td><td class="c good"><b>捕获</b></td></tr>
+<tr><td>sortMovesLocked</td><td class="c">D04</td><td class="small">D02, D04, D08, D12, E03</td><td class="c good"><b>捕获</b></td></tr>
+<tr><td>purchaseLosesItem</td><td class="c">A07 / E04</td><td class="small">A07, E04</td><td class="c good"><b>捕获</b></td></tr>
+<tr><td>badLayout</td><td class="c">F01</td><td class="small">F01, F03, F15</td><td class="c good"><b>捕获</b></td></tr>
+</tbody></table>
+<div class="one">6 个缺陷<b>全部被捕获</b>。全量同时注入时共 18 条用例失败：A04, A05, A07, C08, C10, C12, C13, D02, D04, D08, D12, E03, E04, E05, E09, F01, F03, F15。扩散出的失败是合理的——例如「服务端不校验过期」单独注入时，实测同时影响 C08、C10、C12、C13 等时间边界用例。</div>
+<h2>六、局限与后续</h2>
+<ul>
+<li><b>2 条需真机 / 人工：</b>F06 快速滚动帧率、F13 使用音效与震动。纯逻辑场景无 GPU 合成器、音频与马达接口，不能给出可信结论。</li>
+<li><b>7 条为代理指标：</b>布局宽度、对象计数、WCAG 对比度计算可自动验证算法正确性，但真机字体渲染、内存采样与屏幕亮度仍需实测。</li>
+<li><b>网络与并发为确定性模拟：</b>断网重放、多端并发、重复回调均以可复现的事件序列实现，未覆盖真实弱网抖动、乱序与超时分布。</li>
+<li><b>扩展建议：</b>对每条涉及数据变更的用例补一次「重登后还对吗」「另一端会怎样」复核；把 MANUAL 项纳入真机回归清单。</li>
+</ul>
+<p class="foot">本材料为教学用途。容量 200、堆叠上限 99、整理规则等均为源学习包中的假设设定，不代表任何具体产品的实际逻辑。</p>
+</body></html>

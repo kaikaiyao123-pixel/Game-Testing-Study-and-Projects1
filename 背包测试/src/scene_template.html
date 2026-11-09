@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>背包系统 · 游戏场景与 100 条用例逐项验证</title>
+<style>
+@page { size: A4 landscape; margin: 12mm; }
+:root {
+  --bg: #ffffff; --panel: #f7f8fa; --panel2: #fcfcfa; --line: #dfe3e8;
+  --text: #1a1d24; --muted: #6b7280; --accent: #0c447c; --accent2: #1a1a1a;
+  --pass: #0f6e56; --passbg: #eaf4ef; --fail: #a32d2d; --failbg: #fdf0f0;
+  --manual: #8a6d1f; --manualbg: #fbf5e6; --proxy: #3a5a8c; --proxybg: #eef2f9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 22px 26px 34px; background: var(--bg); color: var(--text);
+  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px; line-height: 1.6; }
+h1 { font-size: 21px; margin: 0 0 3px; font-weight: 600; letter-spacing: -.3px; }
+.sub { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+.meta { color: #8a8f98; font-size: 11px; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.kpi { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.kpi div { flex: 1 1 130px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; background: var(--panel); }
+.kpi b { display: block; font-size: 20px; line-height: 1.25; font-weight: 600; }
+.kpi span { color: var(--muted); font-size: 11px; }
+main { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+section { border: 1px solid var(--line); border-radius: 7px; padding: 13px 15px 15px; background: var(--bg); min-width: 0; }
+h2 { font-size: 14px; margin: 0 0 3px; font-weight: 600; }
+h2 small { font-weight: 400; color: var(--muted); font-size: 11px; margin-left: 6px; }
+.desc { color: var(--muted); font-size: 11px; margin: 0 0 11px; }
+h3 { font-size: 12px; margin: 14px 0 7px; font-weight: 600; color: #333; }
+.statusbar { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 10px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 5px; font-size: 11px; margin-bottom: 10px; }
+.statusbar span { color: var(--muted); }
+.statusbar b { font-weight: 600; color: var(--text); }
+.btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+button { font: inherit; font-size: 11.5px; padding: 5px 9px; border: 1px solid #c9ced6; border-radius: 4px;
+  background: #fff; color: var(--text); cursor: pointer; }
+button:hover { background: #eef2f7; border-color: #9aa4b2; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+button.primary:hover { background: #093764; }
+button.warn { border-color: #d9b2b2; color: #8b2b2b; }
+button:disabled { opacity: .45; cursor: default; }
+.grp-label { font-size: 10.5px; color: var(--muted); width: 100%; margin-top: 3px; }
+.ground { display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; padding: 7px;
+  border: 1px dashed #c9ced6; border-radius: 5px; background: var(--panel2); margin-bottom: 9px; }
+.drop { border: 1px solid #b9c7dc; background: #eef3fa; border-radius: 4px; padding: 3px 8px;
+  font-size: 11px; cursor: pointer; }
+.drop:hover { background: #dce8f8; }
+.empty-hint { color: #9aa0a8; font-size: 11px; padding: 6px 2px; }
+.grid { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; margin-bottom: 9px; }
+.cell { position: relative; aspect-ratio: 1 / 1; border: 1px solid #e2e5ea; border-radius: 3px;
+  background: #fbfbfc; font-size: 9px; text-align: center; overflow: hidden; cursor: default;
+  display: flex; align-items: center; justify-content: center; color: #555; line-height: 1.1; padding: 1px; }
+.cell.has { background: #eef3fa; border-color: #b9c7dc; cursor: pointer; color: #173a68; font-weight: 600; }
+.cell.locked { background: #f6efe0; border-color: #c9ac6c; color: #7a5b16; }
+.cell.expired { background: #f7eded; border-color: #cfa4a4; color: #8b3b3b; }
+.cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cell .q { position: absolute; right: 1px; bottom: 0; font-size: 8px; color: #444; background: rgba(255,255,255,.78);
+  border-radius: 2px; padding: 0 1px; font-weight: 600; }
+.cell .lk { position: absolute; left: 1px; top: 0; font-size: 8px; }
+.log { height: 116px; overflow: auto; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--panel2); padding: 7px 9px; font-size: 10.5px; font-family: Consolas, "Courier New", monospace; }
+.log div { margin: 1px 0; color: #444; }
+.log div span { color: #999; margin-right: 6px; }
+.faults { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding: 8px 10px;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--panel2); margin-bottom: 10px; }
+.faults label { font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.faults input { margin: 0; }
+.verdict { border-left: 3px solid var(--pass); background: var(--passbg); padding: 8px 11px;
+  font-size: 11.5px; border-radius: 0 4px 4px 0; margin-bottom: 10px; }
+.verdict.bad { border-left-color: var(--fail); background: var(--failbg); }
+.filters { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; align-items: center; }
+.filters select { font: inherit; font-size: 11px; padding: 3px 5px; border: 1px solid #c9ced6; border-radius: 4px; background: #fff; }
+.results { height: 660px; overflow: auto; border: 1px solid var(--line); border-radius: 5px; }
+details { border-bottom: 1px solid #edf0f3; }
+details[open] { background: #fbfcfd; }
+summary { list-style: none; cursor: pointer; padding: 6px 9px; display: flex; gap: 7px; align-items: flex-start; font-size: 11.5px; }
+summary::-webkit-details-marker { display: none; }
+summary:hover { background: #f2f5f9; }
+.cid { font-family: Consolas, monospace; font-weight: 600; color: var(--accent); flex: 0 0 34px; }
+.ttl { flex: 1 1 auto; min-width: 0; }
+.mth { color: var(--muted); font-size: 10px; display: block; }
+.badge { flex: 0 0 auto; font-size: 10px; padding: 0 6px; border-radius: 3px; font-weight: 600; line-height: 18px; }
+.badge.PASS { color: var(--pass); background: var(--passbg); }
+.badge.FAIL { color: var(--fail); background: var(--failbg); }
+.badge.MANUAL { color: var(--manual); background: var(--manualbg); }
+.badge.MISSING { color: var(--fail); background: var(--failbg); }
+.tag { font-size: 9.5px; color: var(--proxy); border: 1px solid #cbd6e8; border-radius: 3px; padding: 0 4px; }
+.detail { padding: 4px 11px 11px 51px; font-size: 11px; }
+.detail dl { margin: 0; }
+.detail dt { font-weight: 600; color: #555; margin-top: 6px; font-size: 10.5px; }
+.detail dd { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
+.detail .actual { background: #f2f6f2; border-left: 2px solid var(--pass); padding: 5px 8px;
+  font-family: Consolas, "Courier New", monospace; font-size: 10.5px; border-radius: 0 3px 3px 0; }
+.detail .actual.is-fail { background: var(--failbg); border-left-color: var(--fail); }
+.note { font-size: 11px; color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 5px; padding: 8px 11px; margin-top: 10px; }
+.note b { color: var(--text); }
+table.rv { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+table.rv th, table.rv td { border: 1px solid var(--line); padding: 4px 7px; text-align: left; }
+table.rv th { background: var(--panel); }
+footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); color: #9aa0a8; font-size: 10.5px; }
+@media print { .noprint { display: none; } .results { height: auto; overflow: visible; } .log { height: auto; } }
+</style>
+</head>
+<body>
+<h1>背包系统 · 游戏场景与 100 条用例逐项验证</h1>
+<p class="sub">依据《第一周学习包：测试理论与背包系统样例》· 左侧为可交互被测场景，右侧为真实执行的测试集</p>
+<p class="meta">引擎版本 __ENGINE_VERSION__ ｜ 生成时间 __GENERATED_AT__ ｜ 用例元数据自动提取自源文档（A18 / B22 / C16 / D12 / E16 / F16）｜ 全部逻辑内嵌，离线可用</p>
+
+<div class="kpi" id="kpi"></div>
+
+<main>
+  <section class="scene">
+    <h2>游戏场景 <small>服务端权威 + 客户端投影</small></h2>
+    <p class="desc">规则：容量 200 格 · 堆叠上限 99 · 六态道具（未获得 / 持有 / 使用中 / 已消耗 / 已锁定 / 已过期）· 整理遵循判定表 R1–R8。点击格子选中道具后可执行单格操作。</p>
+    <div class="statusbar" id="statusbar"></div>
+
+    <div class="btns noprint">
+      <span class="grp-label">副本 / 拾取</span>
+      <button id="bKill">击杀怪物（产掉落）</button>
+      <button id="bPickAll">拾取全部</button>
+      <button id="bFill">填满背包</button>
+      <button id="bBuy">满包商城购买</button>
+      <button id="bPush">后台推送（不刷新）</button>
+      <span class="grp-label">道具操作（需选中格子）</span>
+      <button id="bUse">使用</button>
+      <button id="bLock">锁定</button>
+      <button id="bUnlock">解锁</button>
+      <button id="bDiscard">丢弃</button>
+      <button id="bSell">出售</button>
+      <button id="bSplit">拆分 ×2</button>
+      <button id="bSort">整理</button>
+      <span class="grp-label">环境 / 时间 / 视图</span>
+      <button id="bOffline">断网</button>
+      <button id="bReconnect">重连</button>
+      <button id="bTime5">+5 分钟</button>
+      <button id="bTimeDay">+1 天</button>
+      <button id="bRefresh">刷新客户端</button>
+      <button id="bReload">重进游戏</button>
+      <button id="bReset" class="warn">重置场景</button>
+    </div>
+
+    <h3>地面掉落 <small style="font-weight:400;color:#888">（点击单个掉落可直接拾取）</small></h3>
+    <div class="ground" id="ground"></div>
+    <h3>背包 <span id="bagcap" style="font-weight:400;color:#888;font-size:11px"></span></h3>
+    <div class="grid" id="grid"></div>
+    <h3>事件日志</h3>
+    <div class="log" id="log"></div>
+    <div class="note"><b>关于"客户端投影"：</b>界面显示的是最近一次从服务端拉取的快照。执行「后台推送」「+5 分钟」后前台可能暂时落后，需手动「刷新客户端」或「重进游戏」才与服务端一致——这正是 C08、E11 等用例所构造的真实场景。</div>
+  </section>
+
+  <section class="verify">
+    <h2>逐项验证 <small>100 条用例 · 真实执行，非样例展示</small></h2>
+    <p class="desc">验证在独立的引擎实例上运行，不影响左侧游戏场景。每次执行都会重新构造前置状态并逐条断言，结果中的「实际观测值」来自当次真实运行。</p>
+
+    <div class="btns noprint">
+      <button id="bRunClean" class="primary">运行完整验证</button>
+      <button id="bRunFaults">按勾选缺陷运行</button>
+      <button id="bExport">导出结果 JSON</button>
+      <button id="bExpand">展开全部</button>
+      <button id="bCollapse">收起全部</button>
+    </div>
+
+    <h3 class="noprint">缺陷注入（反向测试）</h3>
+    <div class="faults noprint" id="faults"></div>
+
+    <div id="verdict" class="verdict">正在读取预置验证结果…</div>
+    <div id="reverseBox"></div>
+
+    <h3>逐条结果</h3>
+    <div class="filters noprint">
+      <select id="fStatus"><option value="ALL">全部状态</option><option value="FAIL">仅失败</option><option value="PASS">仅通过</option><option value="MANUAL">仅人工</option><option value="proxy">仅代理验证</option></select>
+      <select id="fGroup"><option value="ALL">全部模块</option></select>
+      <span id="countHint" style="font-size:10.5px;color:#888"></span>
+    </div>
+    <div class="results" id="results"></div>
+    <div class="note"><b>结果口径：</b>PASS/FAIL 为程序化断言；<span class="tag">代理</span> 指布局算法、对象计数、对比度计算等可逻辑验证但不替代真机的指标；MANUAL 为需真机或人工判定的项目（F06 帧率、F13 音效震动），已给出检查清单。</div>
+  </section>
+</main>
+
+<footer>本页为教学材料。容量 200、堆叠上限 99、整理规则等均为源学习包中的假设设定，不代表任何具体产品的实际逻辑。实际工作请以策划案与需求文档为准。</footer>
+
+<script>window.PRESET = __PRECOMPUTED__;</script>
+<script>__INLINE_JS__</script>
+<script>
+(function () {
+  'use strict';
+  var NS = window.BagNS, META = window.CasesMeta, IMPL = window.CasesImpl, V = window.VerifyNS;
+  var game = null, selectedUid = null, currentSuite = null, fullData = window.PRESET;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+
+  function readFaults() {
+    var f = {};
+    NS.FAULT_KEYS.forEach(function (k) { var el = $('f_' + k); f[k] = !!(el && el.checked); });
+    return f;
+  }
+  function newGame() { game = new NS.BagEngine({ faults: readFaults() }); selectedUid = null; }
+  function shortName(itemId) {
+    var d = NS.ITEM_DB[itemId];
+    if (!d) return '?';
+    var n = d.name.replace(/[·．]/g, '');
+    return n.length > 3 ? n.slice(0, 3) : n;
+  }
+  function fmtTime(ms) {
+    var d = new Date(ms);
+    var p = function (x) { return String(x).padStart(2, '0'); };
+    return p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+  }
+
+  function renderGame() {
+    var s = game.getState();
+    $('statusbar').innerHTML = [
+      ['账号', s.account], ['会话', s.session], ['容量', s.items.length + ' / ' + s.capacity + ' 格'],
+      ['金币', s.gold], ['服务器时间', fmtTime(s.time)], ['网络', s.online ? '在线' : '断网'],
+      ['版本', s.version], ['效果结算', s.effects + ' 次'], ['邮件', s.mail.length + ' 封']
+    ].map(function (x) { return '<span>' + x[0] + '：</span><b>' + esc(x[1]) + '</b>'; }).join('');
+
+    $('ground').innerHTML = s.ground.length
+      ? s.ground.map(function (d) { return '<span class="drop" data-drop="' + esc(d.dropId) + '">' + esc(shortName(d.itemId)) + ' ×' + d.qty + '</span>'; }).join('')
+      : '<span class="empty-hint">地面暂无掉落物，点击「击杀怪物」生成</span>';
+    Array.prototype.forEach.call($('ground').querySelectorAll('.drop'), function (el) {
+      el.onclick = function () { act(game.pickup(el.getAttribute('data-drop'))); };
+    });
+
+    var bySlot = {};
+    s.items.forEach(function (it) { bySlot[it.slot] = it; });
+    var cells = [];
+    for (var i = 0; i < s.capacity; i++) {
+      var it = bySlot[i];
+      if (!it) { cells.push('<div class="cell"></div>'); continue; }
+      var cls = 'cell has' + (it.state === '已锁定' ? ' locked' : '') + (it.state === '已过期' ? ' expired' : '') + (it.uid === selectedUid ? ' sel' : '');
+      cells.push('<div class="' + cls + '" data-uid="' + esc(it.uid) + '" title="' + esc((NS.ITEM_DB[it.itemId] || { name: '未知' }).name + ' ×' + it.qty + ' · ' + it.state) + '">' +
+        (it.state === '已锁定' ? '<span class="lk">锁</span>' : '') + esc(shortName(it.itemId)) +
+        '<span class="q">' + esc(game.formatQty(it.qty)) + '</span></div>');
+    }
+    $('grid').innerHTML = cells.join('');
+    Array.prototype.forEach.call($('grid').querySelectorAll('.cell.has'), function (el) {
+      el.onclick = function () { selectedUid = el.getAttribute('data-uid'); renderGame(); };
+    });
+    $('bagcap').textContent = '（' + s.items.length + ' / ' + s.capacity + ' 格，客户端投影）';
+    $('log').innerHTML = s.log.map(function (x) { return '<div><span>' + fmtTime(x.t) + '</span>' + esc(x.text) + '</div>'; }).join('') || '<div class="empty-hint">暂无事件</div>';
+    $('log').scrollTop = $('log').scrollHeight;
+  }
+  function act(r) {
+    if (r && r.msg) game._log('[' + r.code + '] ' + r.msg);
+    renderGame();
+  }
+  function withSelected(fn) {
+    if (!selectedUid) { game._log('请先点击背包中的一个道具格子'); renderGame(); return; }
+    fn(selectedUid);
+  }
+  function bind(id, fn) { $(id).onclick = function () { fn(); }; }
+
+  bind('bKill', function () {
+    var pool = ['I1001', 'I1002', 'I1003', 'I1006', 'I1007', 'I1009'];
+    var n = 1 + Math.floor(Math.random() * 3);
+    for (var i = 0; i < n; i++) game.spawnDrop(pool[Math.floor(Math.random() * pool.length)], 1 + Math.floor(Math.random() * 5));
+    renderGame();
+  });
+  bind('bPickAll', function () { act(game.pickupBatch(game.ground.map(function (d) { return d.dropId; }))); });
+  bind('bFill', function () { game.fill('I1009', Math.max(0, game.srv.capacity - game.srv.items.length)); game._log('已填满背包'); renderGame(); });
+  bind('bBuy', function () {
+    game.fill('I1009', Math.max(0, game.srv.capacity - game.srv.items.length));
+    act(game.purchase('I1002', 1));
+  });
+  bind('bPush', function () { act(game.grant('I1002', 1, 'push')); });
+  bind('bUse', function () { withSelected(function (u) { act(game.use(u)); }); });
+  bind('bLock', function () { withSelected(function (u) { act(game.lock(u)); }); });
+  bind('bUnlock', function () { withSelected(function (u) { act(game.unlock(u)); }); });
+  bind('bDiscard', function () { withSelected(function (u) { act(game.discard(u, { confirm: true })); }); });
+  bind('bSell', function () { withSelected(function (u) { act(game.sell(u)); }); });
+  bind('bSplit', function () { withSelected(function (u) { var it = game._find(u); act(it ? game.split(u, Math.min(2, it.qty - 1)) : { code: 'NO_ITEM', msg: '道具不存在' }); }); });
+  bind('bSort', function () { act(game.sort()); });
+  bind('bOffline', function () { act(game.setOnline(false)); });
+  bind('bReconnect', function () { act(game.reconnect()); });
+  bind('bTime5', function () { game.advanceTime(300000); game._log('服务器时间推进 5 分钟'); renderGame(); });
+  bind('bTimeDay', function () { game.advanceTime(86400000); game._log('服务器时间推进 1 天'); renderGame(); });
+  bind('bRefresh', function () { act(game.refresh()); });
+  bind('bReload', function () { act(game.reloadFromServer()); selectedUid = null; renderGame(); });
+  bind('bReset', function () { newGame(); renderGame(); });
+
+  /* ---------- 验证面板 ---------- */
+  var FAULT_LABEL = {
+    swallowDrop: '满包吞掉落物（A04）', noExpireCheck: '服务端不校验过期（C08）',
+    noIdempotency: '使用接口无幂等（E09）', sortMovesLocked: '整理移动锁定道具（D04）',
+    purchaseLosesItem: '满包购买不到账（A07）', badLayout: '小屏末列裁切（F01）'
+  };
+  $('faults').innerHTML = NS.FAULT_KEYS.map(function (k) {
+    return '<label><input type="checkbox" id="f_' + k + '" value="' + k + '">' + esc(FAULT_LABEL[k]) + '</label>';
+  }).join('');
+
+  function renderKPI(s) {
+    $('kpi').innerHTML = [
+      ['用例总数', s.total], ['通过 PASS', s.pass], ['失败 FAIL', s.fail],
+      ['人工 MANUAL', s.manualCount], ['代理验证', s.proxy], ['自动断言', s.auto]
+    ].map(function (x, i) {
+      var color = i === 2 && x[1] > 0 ? 'var(--fail)' : (i === 1 ? 'var(--pass)' : 'var(--text)');
+      return '<div><b style="color:' + color + '">' + x[1] + '</b><span>' + x[0] + '</span></div>';
+    }).join('');
+  }
+
+  function renderResults(suite) {
+    currentSuite = suite;
+    renderKPI(suite.summary);
+    var groups = Array.from(new Set(suite.results.map(function (r) { return r.group; })));
+    var sel = $('fGroup'), keep = sel.value;
+    sel.innerHTML = '<option value="ALL">全部模块</option>' + groups.map(function (g) { return '<option value="' + esc(g) + '">' + esc(g) + '</option>'; }).join('');
+    if (groups.indexOf(keep) >= 0 || keep === 'ALL') sel.value = keep;
+    renderList();
+  }
+
+  function renderList() {
+    if (!currentSuite) return;
+    var st = $('fStatus').value, gp = $('fGroup').value;
+    var list = currentSuite.results.filter(function (r) {
+      var okS = st === 'ALL' || (st === 'proxy' ? r.kind === 'proxy' : r.status === st);
+      var okG = gp === 'ALL' || r.group === gp;
+      return okS && okG;
+    });
+    $('countHint').textContent = '显示 ' + list.length + ' / ' + currentSuite.results.length + ' 条';
+    $('results').innerHTML = list.map(function (r) {
+      var tag = r.kind === 'proxy' ? '<span class="tag">代理</span>' : (r.kind === 'manual' ? '<span class="tag">人工</span>' : '');
+      return '<details><summary><span class="cid">' + esc(r.id) + '</span>' +
+        '<span class="ttl">' + esc(r.title) + '<span class="mth">' + esc(r.method) + ' · ' + esc(r.priority) + ' · ' + esc(r.group) + '</span></span>' +
+        tag + '<span class="badge ' + r.status + '">' + r.status + '</span></summary>' +
+        '<div class="detail"><dl>' +
+        '<dt>前置条件</dt><dd>' + esc(r.pre) + '</dd>' +
+        '<dt>操作步骤</dt><dd>' + esc(r.steps) + '</dd>' +
+        '<dt>预期结果</dt><dd>' + esc(r.expect) + '</dd>' +
+        '<dt>实际观测值' + (r.kind === 'proxy' ? '（代理指标）' : '') + '</dt>' +
+        '<dd class="actual' + (r.status === 'FAIL' ? ' is-fail' : '') + '">' + esc(r.actual) + '</dd>' +
+        '</dl></div></details>';
+    }).join('') || '<div class="empty-hint" style="padding:12px">当前筛选下没有结果</div>';
+  }
+  $('fStatus').onchange = renderList;
+  $('fGroup').onchange = renderList;
+  $('bExpand').onclick = function () { Array.prototype.forEach.call($('results').querySelectorAll('details'), function (d) { d.open = true; }); };
+  $('bCollapse').onclick = function () { Array.prototype.forEach.call($('results').querySelectorAll('details'), function (d) { d.open = false; }); };
+
+  function renderVerdict(data) {
+    var b = data.baseline.summary, d = data.injected.summary;
+    var allOk = data.acceptance.metaMatchesDoc && data.acceptance.noMissingImpl &&
+      data.acceptance.baselineNoFail && data.acceptance.reverseEffective && data.acceptance.injectedDetected;
+    $('verdict').className = 'verdict' + (allOk ? '' : ' bad');
+    $('verdict').innerHTML = '<b>' + (allOk ? '验收通过' : '验收未通过') + '：</b>' +
+      '基准版 ' + b.pass + ' 条 PASS / ' + b.fail + ' 条 FAIL / ' + b.manualCount + ' 条 MANUAL；' +
+      '注入 6 个典型缺陷后出现 ' + d.fail + ' 条 FAIL；' +
+      '6 项单独反向注入测试 ' + (data.reverseTest.pass ? '全部被对应用例捕获' : '存在盲区') + '。' +
+      '<br><span style="color:#666">这说明测试集不是"永远通过"的空壳：它确实能发现文档 A04 / C08 / E09 / D04 / A07 / F01 所描述的缺陷。</span>';
+    $('reverseBox').innerHTML = '<table class="rv"><thead><tr><th>注入的缺陷</th><th>预期捕获用例</th><th>实际失败用例</th><th>结论</th></tr></thead><tbody>' +
+      data.reverseTest.checks.map(function (c) {
+        return '<tr><td>' + esc(FAULT_LABEL[c.fault] || c.fault) + '</td><td>' + esc(c.expected.join(' / ')) + '</td><td>' + esc(c.caught.join(', ') || '无') + '</td><td style="color:' + (c.pass ? 'var(--pass)' : 'var(--fail)') + '">' + (c.pass ? '捕获' : '盲区') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  function runFull() {
+    var data = V.runAll(NS, META, IMPL);
+    fullData = data;
+    renderResults(data.baseline);
+    renderVerdict(data);
+    $('results').scrollTop = 0;
+  }
+  $('bRunClean').onclick = runFull;
+  $('bRunFaults').onclick = function () {
+    var f = readFaults();
+    var suite = V.runSuite(NS, META, IMPL, f, '自定义缺陷注入');
+    renderResults(suite);
+    var fails = suite.results.filter(function (r) { return r.status === 'FAIL'; }).map(function (r) { return r.id; });
+    $('verdict').className = 'verdict' + (fails.length ? '' : ' bad');
+    $('verdict').innerHTML = '<b>按当前勾选缺陷重跑完成：</b>' + suite.summary.pass + ' 条 PASS、' + fails.length + ' 条 FAIL。' +
+      (fails.length ? '失败用例：' + esc(fails.join(', ')) + '。' : '当前注入未产生可观测失败。') +
+      '<br><span style="color:#666">点击「运行完整验证」可回到基准版与反向测试结论。</span>';
+    $('reverseBox').innerHTML = '';
+    $('results').scrollTop = 0;
+  };
+  $('bExport').onclick = function () {
+    var blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'verification_results.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  };
+
+  newGame();
+  renderGame();
+  renderResults(fullData.baseline);
+  renderVerdict(fullData);
+})();
+</script>
+</body>
+</html>

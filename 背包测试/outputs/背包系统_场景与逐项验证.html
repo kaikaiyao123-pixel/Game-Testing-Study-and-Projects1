@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>背包系统 · 游戏场景与 100 条用例逐项验证</title>
+<style>
+@page { size: A4 landscape; margin: 12mm; }
+:root {
+  --bg: #ffffff; --panel: #f7f8fa; --panel2: #fcfcfa; --line: #dfe3e8;
+  --text: #1a1d24; --muted: #6b7280; --accent: #0c447c; --accent2: #1a1a1a;
+  --pass: #0f6e56; --passbg: #eaf4ef; --fail: #a32d2d; --failbg: #fdf0f0;
+  --manual: #8a6d1f; --manualbg: #fbf5e6; --proxy: #3a5a8c; --proxybg: #eef2f9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 22px 26px 34px; background: var(--bg); color: var(--text);
+  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px; line-height: 1.6; }
+h1 { font-size: 21px; margin: 0 0 3px; font-weight: 600; letter-spacing: -.3px; }
+.sub { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+.meta { color: #8a8f98; font-size: 11px; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.kpi { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.kpi div { flex: 1 1 130px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; background: var(--panel); }
+.kpi b { display: block; font-size: 20px; line-height: 1.25; font-weight: 600; }
+.kpi span { color: var(--muted); font-size: 11px; }
+main { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+section { border: 1px solid var(--line); border-radius: 7px; padding: 13px 15px 15px; background: var(--bg); min-width: 0; }
+h2 { font-size: 14px; margin: 0 0 3px; font-weight: 600; }
+h2 small { font-weight: 400; color: var(--muted); font-size: 11px; margin-left: 6px; }
+.desc { color: var(--muted); font-size: 11px; margin: 0 0 11px; }
+h3 { font-size: 12px; margin: 14px 0 7px; font-weight: 600; color: #333; }
+.statusbar { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 10px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 5px; font-size: 11px; margin-bottom: 10px; }
+.statusbar span { color: var(--muted); }
+.statusbar b { font-weight: 600; color: var(--text); }
+.btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+button { font: inherit; font-size: 11.5px; padding: 5px 9px; border: 1px solid #c9ced6; border-radius: 4px;
+  background: #fff; color: var(--text); cursor: pointer; }
+button:hover { background: #eef2f7; border-color: #9aa4b2; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+button.primary:hover { background: #093764; }
+button.warn { border-color: #d9b2b2; color: #8b2b2b; }
+button:disabled { opacity: .45; cursor: default; }
+.grp-label { font-size: 10.5px; color: var(--muted); width: 100%; margin-top: 3px; }
+.ground { display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; padding: 7px;
+  border: 1px dashed #c9ced6; border-radius: 5px; background: var(--panel2); margin-bottom: 9px; }
+.drop { border: 1px solid #b9c7dc; background: #eef3fa; border-radius: 4px; padding: 3px 8px;
+  font-size: 11px; cursor: pointer; }
+.drop:hover { background: #dce8f8; }
+.empty-hint { color: #9aa0a8; font-size: 11px; padding: 6px 2px; }
+.grid { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; margin-bottom: 9px; }
+.cell { position: relative; aspect-ratio: 1 / 1; border: 1px solid #e2e5ea; border-radius: 3px;
+  background: #fbfbfc; font-size: 9px; text-align: center; overflow: hidden; cursor: default;
+  display: flex; align-items: center; justify-content: center; color: #555; line-height: 1.1; padding: 1px; }
+.cell.has { background: #eef3fa; border-color: #b9c7dc; cursor: pointer; color: #173a68; font-weight: 600; }
+.cell.locked { background: #f6efe0; border-color: #c9ac6c; color: #7a5b16; }
+.cell.expired { background: #f7eded; border-color: #cfa4a4; color: #8b3b3b; }
+.cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cell .q { position: absolute; right: 1px; bottom: 0; font-size: 8px; color: #444; background: rgba(255,255,255,.78);
+  border-radius: 2px; padding: 0 1px; font-weight: 600; }
+.cell .lk { position: absolute; left: 1px; top: 0; font-size: 8px; }
+.log { height: 116px; overflow: auto; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--panel2); padding: 7px 9px; font-size: 10.5px; font-family: Consolas, "Courier New", monospace; }
+.log div { margin: 1px 0; color: #444; }
+.log div span { color: #999; margin-right: 6px; }
+.faults { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding: 8px 10px;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--panel2); margin-bottom: 10px; }
+.faults label { font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.faults input { margin: 0; }
+.verdict { border-left: 3px solid var(--pass); background: var(--passbg); padding: 8px 11px;
+  font-size: 11.5px; border-radius: 0 4px 4px 0; margin-bottom: 10px; }
+.verdict.bad { border-left-color: var(--fail); background: var(--failbg); }
+.filters { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; align-items: center; }
+.filters select { font: inherit; font-size: 11px; padding: 3px 5px; border: 1px solid #c9ced6; border-radius: 4px; background: #fff; }
+.results { height: 660px; overflow: auto; border: 1px solid var(--line); border-radius: 5px; }
+details { border-bottom: 1px solid #edf0f3; }
+details[open] { background: #fbfcfd; }
+summary { list-style: none; cursor: pointer; padding: 6px 9px; display: flex; gap: 7px; align-items: flex-start; font-size: 11.5px; }
+summary::-webkit-details-marker { display: none; }
+summary:hover { background: #f2f5f9; }
+.cid { font-family: Consolas, monospace; font-weight: 600; color: var(--accent); flex: 0 0 34px; }
+.ttl { flex: 1 1 auto; min-width: 0; }
+.mth { color: var(--muted); font-size: 10px; display: block; }
+.badge { flex: 0 0 auto; font-size: 10px; padding: 0 6px; border-radius: 3px; font-weight: 600; line-height: 18px; }
+.badge.PASS { color: var(--pass); background: var(--passbg); }
+.badge.FAIL { color: var(--fail); background: var(--failbg); }
+.badge.MANUAL { color: var(--manual); background: var(--manualbg); }
+.badge.MISSING { color: var(--fail); background: var(--failbg); }
+.tag { font-size: 9.5px; color: var(--proxy); border: 1px solid #cbd6e8; border-radius: 3px; padding: 0 4px; }
+.detail { padding: 4px 11px 11px 51px; font-size: 11px; }
+.detail dl { margin: 0; }
+.detail dt { font-weight: 600; color: #555; margin-top: 6px; font-size: 10.5px; }
+.detail dd { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
+.detail .actual { background: #f2f6f2; border-left: 2px solid var(--pass); padding: 5px 8px;
+  font-family: Consolas, "Courier New", monospace; font-size: 10.5px; border-radius: 0 3px 3px 0; }
+.detail .actual.is-fail { background: var(--failbg); border-left-color: var(--fail); }
+.note { font-size: 11px; color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 5px; padding: 8px 11px; margin-top: 10px; }
+.note b { color: var(--text); }
+table.rv { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+table.rv th, table.rv td { border: 1px solid var(--line); padding: 4px 7px; text-align: left; }
+table.rv th { background: var(--panel); }
+footer { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); color: #9aa0a8; font-size: 10.5px; }
+@media print { .noprint { display: none; } .results { height: auto; overflow: visible; } .log { height: auto; } }
+</style>
+</head>
+<body>
+<h1>背包系统 · 游戏场景与 100 条用例逐项验证</h1>
+<p class="sub">依据《第一周学习包：测试理论与背包系统样例》· 左侧为可交互被测场景，右侧为真实执行的测试集</p>
+<p class="meta">引擎版本 v1.0.0 ｜ 生成时间 2026/11/9 18:36:34 ｜ 用例元数据自动提取自源文档（A18 / B22 / C16 / D12 / E16 / F16）｜ 全部逻辑内嵌，离线可用</p>
+
+<div class="kpi" id="kpi"></div>
+
+<main>
+  <section class="scene">
+    <h2>游戏场景 <small>服务端权威 + 客户端投影</small></h2>
+    <p class="desc">规则：容量 200 格 · 堆叠上限 99 · 六态道具（未获得 / 持有 / 使用中 / 已消耗 / 已锁定 / 已过期）· 整理遵循判定表 R1–R8。点击格子选中道具后可执行单格操作。</p>
+    <div class="statusbar" id="statusbar"></div>
+
+    <div class="btns noprint">
+      <span class="grp-label">副本 / 拾取</span>
+      <button id="bKill">击杀怪物（产掉落）</button>
+      <button id="bPickAll">拾取全部</button>
+      <button id="bFill">填满背包</button>
+      <button id="bBuy">满包商城购买</button>
+      <button id="bPush">后台推送（不刷新）</button>
+      <span class="grp-label">道具操作（需选中格子）</span>
+      <button id="bUse">使用</button>
+      <button id="bLock">锁定</button>
+      <button id="bUnlock">解锁</button>
+      <button id="bDiscard">丢弃</button>
+      <button id="bSell">出售</button>
+      <button id="bSplit">拆分 ×2</button>
+      <button id="bSort">整理</button>
+      <span class="grp-label">环境 / 时间 / 视图</span>
+      <button id="bOffline">断网</button>
+      <button id="bReconnect">重连</button>
+      <button id="bTime5">+5 分钟</button>
+      <button id="bTimeDay">+1 天</button>
+      <button id="bRefresh">刷新客户端</button>
+      <button id="bReload">重进游戏</button>
+      <button id="bReset" class="warn">重置场景</button>
+    </div>
+
+    <h3>地面掉落 <small style="font-weight:400;color:#888">（点击单个掉落可直接拾取）</small></h3>
+    <div class="ground" id="ground"></div>
+    <h3>背包 <span id="bagcap" style="font-weight:400;color:#888;font-size:11px"></span></h3>
+    <div class="grid" id="grid"></div>
+    <h3>事件日志</h3>
+    <div class="log" id="log"></div>
+    <div class="note"><b>关于"客户端投影"：</b>界面显示的是最近一次从服务端拉取的快照。执行「后台推送」「+5 分钟」后前台可能暂时落后，需手动「刷新客户端」或「重进游戏」才与服务端一致——这正是 C08、E11 等用例所构造的真实场景。</div>
+  </section>
+
+  <section class="verify">
+    <h2>逐项验证 <small>100 条用例 · 真实执行，非样例展示</small></h2>
+    <p class="desc">验证在独立的引擎实例上运行，不影响左侧游戏场景。每次执行都会重新构造前置状态并逐条断言，结果中的「实际观测值」来自当次真实运行。</p>
+
+    <div class="btns noprint">
+      <button id="bRunClean" class="primary">运行完整验证</button>
+      <button id="bRunFaults">按勾选缺陷运行</button>
+      <button id="bExport">导出结果 JSON</button>
+      <button id="bExpand">展开全部</button>
+      <button id="bCollapse">收起全部</button>
+    </div>
+
+    <h3 class="noprint">缺陷注入（反向测试）</h3>
+    <div class="faults noprint" id="faults"></div>
+
+    <div id="verdict" class="verdict">正在读取预置验证结果…</div>
+    <div id="reverseBox"></div>
+
+    <h3>逐条结果</h3>
+    <div class="filters noprint">
+      <select id="fStatus"><option value="ALL">全部状态</option><option value="FAIL">仅失败</option><option value="PASS">仅通过</option><option value="MANUAL">仅人工</option><option value="proxy">仅代理验证</option></select>
+      <select id="fGroup"><option value="ALL">全部模块</option></select>
+      <span id="countHint" style="font-size:10.5px;color:#888"></span>
+    </div>
+    <div class="results" id="results"></div>
+    <div class="note"><b>结果口径：</b>PASS/FAIL 为程序化断言；<span class="tag">代理</span> 指布局算法、对象计数、对比度计算等可逻辑验证但不替代真机的指标；MANUAL 为需真机或人工判定的项目（F06 帧率、F13 音效震动），已给出检查清单。</div>
+  </section>
+</main>
+
+<footer>本页为教学材料。容量 200、堆叠上限 99、整理规则等均为源学习包中的假设设定，不代表任何具体产品的实际逻辑。实际工作请以策划案与需求文档为准。</footer>
+
+<script>window.PRESET = {"generatedAt":"2026-11-09T10:36:34.194Z","engineVersion":"1.0.0","faultKeys":["swallowDrop","noExpireCheck","noIdempotency","sortMovesLocked","purchaseLosesItem","badLayout"],"consistency":{"metaCount":100,"implCount":100,"missingImpl":[],"orphanImpl":[],"groups":{"A 容量与拾取":18,"B 道具操作":22,"C 状态与迁移":16,"D 判定表：整理规则":12,"E 场景法：完整链路":16,"F 兼容、性能与界面":16}},"baseline":{"label":"基准版（无缺陷注入）","summary":{"total":100,"auto":91,"proxy":7,"manual":2,"pass":98,"fail":0,"manualCount":2,"missing":0},"results":[{"id":"A01","group":"A 容量与拾取","title":"空背包首次拾取单个道具","method":"边界值·零点","priority":"P1","pre":"账号已登录；容量上限 200；背包为空；网络正常","steps":"1. 生成 1 个掉落物 I1001×1　2. 点击拾取　3. 查看服务端、客户端与地面","expect":"入包成功；服务端 1 格；客户端显示 1 格；地面掉落物消失；空状态引导消失","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；服务端=1格；客户端=1格；地面=0个"},{"id":"A02","group":"A 容量与拾取","title":"背包仅 1 个道具时拾取","method":"边界值·内点","priority":"P2","pre":"背包已有 1 个不堆叠道具；容量 200","steps":"1. 生成掉落　2. 点击拾取　3. 核对数量与排序","expect":"拾取成功；背包共 2 格；两格道具 ID 与数量均正确","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；背包=2格；I1002数量=1"},{"id":"A03","group":"A 容量与拾取","title":"背包 199 格时拾取第 200 个","method":"边界值·内点","priority":"P1","pre":"背包已放入 199 个不堆叠道具（差 1 格满）","steps":"1. 生成掉落　2. 点击拾取第 200 个　3. 核对容量","expect":"仍可拾取第 200 个；背包恰好 200 格；无溢出与报错","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；背包=200格（上限200）"},{"id":"A04","group":"A 容量与拾取","title":"背包 200 格满时拾取第 201 个","method":"边界值·上点","priority":"P0","pre":"背包容量 200；已放入 200 个不堆叠道具；地面有 1 个掉落","steps":"1. 生成掉落　2. 点击拾取第 201 个　3. 观察提示、掉落物与背包","expect":"提示「背包已满」；掉落物保留在地面不被吞掉；背包仍为 200；服务端无新增；客户端无新增","kind":"auto","checklist":"","status":"PASS","actual":"code=BAG_FULL；地面保留=1个；背包=200格；客户端=200格"},{"id":"A05","group":"A 容量与拾取","title":"背包满时批量拾取（部分可放入）","method":"边界值+场景法","priority":"P1","pre":"背包 200 格满；其中 1 堆 I1001×50（未满堆，可再容纳 49）；地面 4 个 I1001×20","steps":"1. 执行批量拾取 4 个掉落　2. 统计成功/失败数　3. 核对地面剩余与总数量","expect":"部分成功：能合并入未满堆的先入包；放不下的保留在地面并给出提示；背包不超 200；总数量守恒","kind":"auto","checklist":"","status":"PASS","actual":"成功=2，拒绝=2；地面剩余=2个；背包=200格；I1001总数=130"},{"id":"A06","group":"A 容量与拾取","title":"背包满时系统邮件发放道具","method":"边界值","priority":"P0","pre":"背包 200 格满；系统邮件待发放 I1001×1","steps":"1. 触发系统邮件发放　2. 查收邮件与背包","expect":"背包不溢出；道具进入邮件且可领取；有明确提示；不得静默丢失","kind":"auto","checklist":"","status":"PASS","actual":"code=GRANT_TO_MAIL；邮件=1封；背包=200格"},{"id":"A07","group":"A 容量与拾取","title":"背包满时商城购买道具","method":"边界值","priority":"P0","pre":"背包 200 格满；账号钻石/金币 1000；商城商品 I1002 单价 20","steps":"1. 打开商城购买 I1002×1　2. 支付　3. 查看货币、背包、邮件与提示","expect":"要么拦截购买且不扣款，要么扣款成功后通过邮件补发并给出提示；绝不出现「扣款成功、道具丢失、无提示」","kind":"auto","checklist":"","status":"PASS","actual":"扣款=20；code=GRANT_TO_MAIL；邮件补发=1封；静默丢失=false"},{"id":"A08","group":"A 容量与拾取","title":"扩容后立即再次拾取","method":"状态迁移","priority":"P1","pre":"背包 200 格满；已购买扩容道具","steps":"1. 扩容至 201 格　2. 立即拾取新掉落　3. 核对容量与道具","expect":"扩容即时生效；拾取成功；背包 201 格；无旧数据丢失","kind":"auto","checklist":"","status":"PASS","actual":"扩容=CAPACITY_SET；拾取=INSERTED；容量=201；背包=201格"},{"id":"A09","group":"A 容量与拾取","title":"缩容后道具数量超过新上限","method":"状态迁移·非法","priority":"P0","pre":"背包容量 200；已放入 200 个道具","steps":"1. 发起缩容至 100 格　2. 观察服务端响应　3. 核对道具数量","expect":"缩容被拒绝或按规则明确处理；不得静默丢弃 100 个道具；道具总数仍为 200","kind":"auto","checklist":"","status":"PASS","actual":"code=SHRINK_BLOCKED；容量=200；道具=200个"},{"id":"A10","group":"A 容量与拾取","title":"单次拾取数量超过上限（如 300 个）","method":"边界值·离点","priority":"P1","pre":"背包为空；容量 200；构造单次拾取 300 个的掉落堆","steps":"1. 点击拾取该掉落　2. 观察响应与数据","expect":"拦截超上限拾取；不写入 300 个道具；掉落物保留在地面；服务端不产生脏数据","kind":"auto","checklist":"","status":"PASS","actual":"code=QTY_OVER_LIMIT；背包=0格；地面=1个"},{"id":"A11","group":"A 容量与拾取","title":"拾取数量为 0 的道具堆","method":"等价类·无效","priority":"P2","pre":"地面存在数量为 0 的异常掉落堆","steps":"1. 点击拾取　2. 查服务端道具流水","expect":"拦截；不产生 0 数量道具；不写入脏数据","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_QTY；背包=0格"},{"id":"A12","group":"A 容量与拾取","title":"拾取数量为负数的异常数据","method":"等价类·无效","priority":"P1","pre":"地面存在数量为 -5 的异常掉落堆（伪造包/配置错误）","steps":"1. 点击拾取　2. 查服务端数量字段","expect":"拦截；服务端不得写入负数量；记日志","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_QTY；负数道具=false"},{"id":"A13","group":"A 容量与拾取","title":"拾取不存在的道具 ID","method":"等价类·无效","priority":"P1","pre":"掉落物携带不存在的道具 ID I9999","steps":"1. 点击拾取　2. 观察客户端与日志","expect":"拦截并记日志；不崩溃；不产生无 ID 道具","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_ITEM_ID；背包=0格"},{"id":"A14","group":"A 容量与拾取","title":"拾取已下架或已过期的道具 ID","method":"等价类·无效","priority":"P2","pre":"掉落物携带已下架道具 ID I1008","steps":"1. 点击拾取　2. 观察响应","expect":"拦截并给出明确提示；不产生已下架道具；不崩溃","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_ITEM_ID；背包=0格"},{"id":"A15","group":"A 容量与拾取","title":"快速连续点击拾取 10 次","method":"场景法·重复","priority":"P1","pre":"地面有 1 个掉落；客户端按钮未做防抖（可连点）","steps":"1. 200ms 内连续点击拾取 10 次　2. 查道具流水与地面","expect":"仅入包一次；服务端流水只有 1 条；地面无残留；不重复发放","kind":"auto","checklist":"","status":"PASS","actual":"流水=1条；背包=1格；地面=0个；成功响应=10次"},{"id":"A16","group":"A 容量与拾取","title":"拾取过程中断网","method":"场景法·异常","priority":"P0","pre":"背包 100 格；地面 1 个掉落；可在拾取瞬间断网","steps":"1. 点击拾取的瞬间断开网络　2. 恢复网络并等待重连　3. 核对背包与地面","expect":"一致性约束：重连后要么拾取成功且道具在背包，要么失败且道具仍在地面；不得两端都扣或两端都在","kind":"auto","checklist":"","status":"PASS","actual":"断网响应=OFFLINE；重连后在包=1、在地面=0、合计=1；前后端格数一致=true"},{"id":"A17","group":"A 容量与拾取","title":"拾取成功后杀进程重进","method":"场景法·异常","priority":"P0","pre":"背包 100 格；拾取成功后可强杀进程重进","steps":"1. 拾取 1 个道具　2. 杀进程　3. 重进游戏读取服务端数据","expect":"重进后道具仍在；数量与 ID 与服务端一致；不出现回档或重复","kind":"auto","checklist":"","status":"PASS","actual":"服务端 I1001=1；重进后客户端=1；总格数=101"},{"id":"A18","group":"A 容量与拾取","title":"拾取过程中切换账号","method":"场景法·异常","priority":"P1","pre":"账号 A 有 1 个待拾取掉落；已准备账号 B","steps":"1. 断网后发起拾取　2. 拾取过程中切换账号 B　3. 切回账号 A","expect":"账号数据严格隔离；B 中看不到 A 的道具或掉落；切回 A 后未完成操作不污染 B","kind":"auto","checklist":"","status":"PASS","actual":"切换前响应=OFFLINE；B账号背包=0格/掉落=0个；A账号切回后地面=1个、背包=0格"},{"id":"B01","group":"B 道具操作","title":"使用普通消耗品","method":"场景法·基本流","priority":"P0","pre":"持有 I1001 治疗药水×1；角色等级 60 战士；网络正常","steps":"1. 打开背包　2. 点击使用　3. 查效果流水与道具","expect":"使用成功；效果结算 1 次；道具扣除 1 个；流水含「持有→使用中→已消耗」","kind":"auto","checklist":"","status":"PASS","actual":"code=USED；效果=1次；迁移=持有→使用中→已消耗"},{"id":"B02","group":"B 道具操作","title":"使用剩余次数为 1 的道具","method":"边界值","priority":"P1","pre":"持有三次数卷轴，剩余次数已消耗至 1","steps":"1. 点击使用　2. 观察道具与次数","expect":"允许最后一次使用；使用后剩余次数 0 且道具从背包消失；不出现负数次数","kind":"auto","checklist":"","status":"PASS","actual":"code=USED；剩余次数=0；道具仍在=false"},{"id":"B03","group":"B 道具操作","title":"使用剩余次数为 0 的道具","method":"边界值·零点","priority":"P1","pre":"持有多次使用道具，剩余次数为 0 且道具未从背包消失","steps":"1. 点击使用　2. 观察界面与服务端流水","expect":"不可使用；按钮置灰或提示次数已用尽；不触发效果；服务端不产生消耗记录","kind":"auto","checklist":"","status":"PASS","actual":"code=USES_EXHAUSTED；效果=0次；消耗流水=0条"},{"id":"B04","group":"B 道具操作","title":"连续使用同道具直至耗尽","method":"边界值","priority":"P1","pre":"持有三次数卷轴，剩余次数 3","steps":"1. 连续点击使用直至耗尽　2. 第 4 次继续点击　3. 核对效果次数与道具","expect":"前 3 次效果各结算 1 次；第 4 次被拒绝；道具在次数耗尽时消失；总数守恒","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/USED/USED/ITEM_NOT_FOUND；效果合计=3次；道具仍在=false"},{"id":"B05","group":"B 道具操作","title":"使用后道具是否正确消失","method":"功能","priority":"P0","pre":"持有 I1001×1；客户端已刷新","steps":"1. 使用道具　2. 同时检查服务端与客户端视图","expect":"前后端该 uid 均已移除；不出现「服务端扣了、界面还显示」的幽灵道具","kind":"auto","checklist":"","status":"PASS","actual":"服务端存在=false；客户端存在=false"},{"id":"B06","group":"B 道具操作","title":"等级不足时使用有等级限制的道具","method":"等价类·无效","priority":"P1","pre":"角色等级 1；持有需要等级 10 的战士专属徽章","steps":"1. 点击使用　2. 观察服务端校验结果","expect":"服务端拒绝（不可只依赖客户端置灰）；无效果；道具保留","kind":"auto","checklist":"","status":"PASS","actual":"code=LEVEL_LOW；效果=0次；道具保留=true"},{"id":"B07","group":"B 道具操作","title":"职业不符时使用限定职业道具","method":"等价类·无效","priority":"P1","pre":"角色职业为法师；持有限定「战士」职业的徽章","steps":"1. 点击使用　2. 观察服务端校验结果","expect":"服务端拒绝职业不符；无效果；道具保留","kind":"auto","checklist":"","status":"PASS","actual":"code=JOB_MISMATCH；效果=0次；道具保留=true"},{"id":"B08","group":"B 道具操作","title":"冷却期间再次使用","method":"状态迁移·非法","priority":"P1","pre":"持有冷却型药剂 I1007×2，冷却时间 30 秒","steps":"1. 使用 1 次　2. 冷却期间立即再次使用　3. 推进 30 秒后再使用","expect":"第 2 次被拒绝且不扣道具；冷却结束后第 3 次成功；效果共 2 次","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/COOLDOWN/USED；效果=2次；剩余数量=0"},{"id":"B09","group":"B 道具操作","title":"丢弃道具并确认","method":"场景法","priority":"P1","pre":"持有 I1002×1；支持丢弃二次确认","steps":"1. 选中道具点击丢弃　2. 在确认框点击确认　3. 查看背包","expect":"道具从背包移除；记入可回收记录；前后端一致","kind":"auto","checklist":"","status":"PASS","actual":"code=DISCARDED；背包=0格；回收记录=1条"},{"id":"B10","group":"B 道具操作","title":"丢弃时点击取消","method":"场景法·备选流","priority":"P2","pre":"持有 I1002×1；已打开丢弃确认框","steps":"1. 点击丢弃　2. 在确认框点击取消　3. 查看背包","expect":"数据完全不变；道具数量与状态与操作前一致；不写流水","kind":"auto","checklist":"","status":"PASS","actual":"code=CANCELLED；背包=1格；数量=1"},{"id":"B11","group":"B 道具操作","title":"丢弃已锁定道具","method":"判定表","priority":"P0","pre":"持有 I1002×1 且已锁定","steps":"1. 点击丢弃并确认　2. 查看背包与提示","expect":"拒绝丢弃；道具保留且仍为已锁定；给出明确提示","kind":"auto","checklist":"","status":"PASS","actual":"code=LOCKED；背包=1格；状态=已锁定"},{"id":"B12","group":"B 道具操作","title":"丢弃数量为 0","method":"等价类·无效","priority":"P2","pre":"持有 I1002×1；支持输入丢弃数量","steps":"1. 丢弃数量填 0　2. 确认　3. 查流水","expect":"拦截；道具不变；不产生 0 数量丢弃流水","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_QTY；背包=1格；丢弃流水=0条"},{"id":"B13","group":"B 道具操作","title":"批量丢弃中混有锁定道具","method":"判定表","priority":"P0","pre":"背包 3 个道具，第 2 个已锁定；支持多选批量丢弃","steps":"1. 进入批量选择　2. 全选 3 个　3. 确认丢弃","expect":"仅未锁定的 2 个被丢弃；锁定道具保留且仍锁定；提示「已跳过锁定道具」；部分成功被正确处理","kind":"auto","checklist":"","status":"PASS","actual":"丢弃=2个；跳过=1个；剩余=1个（状态已锁定）"},{"id":"B14","group":"B 道具操作","title":"出售道具后金币正确增加","method":"功能","priority":"P0","pre":"账号金币 1000；持有 I1002×1（单价 20）","steps":"1. 出售该道具　2. 查金币与背包","expect":"金币 = 1000 + 20 = 1020；道具移除；流水记录 gain=20","kind":"auto","checklist":"","status":"PASS","actual":"金币=1020（预期1020）；流水gain=20"},{"id":"B15","group":"B 道具操作","title":"出售后金币将超过持有上限","method":"边界值","priority":"P0","pre":"账号金币 = 持有上限 - 5；持有 I1002×1（出售可得 20）","steps":"1. 出售道具　2. 查金币与道具","expect":"出售后金币将超过上限时明确拦截；金币不变；道具不丢失；不出现金币溢出为负","kind":"auto","checklist":"","status":"PASS","actual":"code=GOLD_OVER_CAP；金币=999999994；道具保留=true"},{"id":"B16","group":"B 道具操作","title":"出售已绑定或不可交易道具","method":"等价类·无效","priority":"P1","pre":"持有绑定·新手礼包 I1005（不可交易）","steps":"1. 点击出售　2. 观察响应","expect":"拒绝出售；不增加金币；道具保留；提示不可交易","kind":"auto","checklist":"","status":"PASS","actual":"code=NOT_TRADEABLE；金币=1000；道具保留=true"},{"id":"B17","group":"B 道具操作","title":"出售后立即回购","method":"场景法","priority":"P2","pre":"账号金币 1000；刚售出 I1002×1","steps":"1. 出售道具　2. 立即点击回购　3. 核对金币与道具","expect":"回购成功；金币回到 1000；道具数量与出售前一致；不产生重复发放","kind":"auto","checklist":"","status":"PASS","actual":"code=BUYBACK；金币=1000；I1002数量=1"},{"id":"B18","group":"B 道具操作","title":"堆叠已达上限时拾取同类道具","method":"边界值","priority":"P1","pre":"持有 I1001 一堆已达堆叠上限 99；背包未满","steps":"1. 生成同类道具掉落 1 个　2. 点击拾取　3. 核对堆叠","expect":"不覆盖原堆；新开一格存放；总数量 = 100；每堆均不超过 99","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；堆叠=99+1；总数=100"},{"id":"B19","group":"B 道具操作","title":"将堆叠道具拆分为两堆","method":"功能","priority":"P2","pre":"持有 I1001×10 一堆；背包有空格","steps":"1. 选择拆分数量为 4　2. 确认　3. 核对两堆数量","expect":"拆分为 6 + 4 两堆；总数仍为 10；生成新 uid；不出现数量丢失","kind":"auto","checklist":"","status":"PASS","actual":"code=SPLIT；两堆=4+6；总数=10"},{"id":"B20","group":"B 道具操作","title":"拆分数量等于总数量","method":"边界值","priority":"P2","pre":"持有 I1001×10 一堆","steps":"1. 拆分数量填 10（等于总数）　2. 确认","expect":"拦截；不产生 0 数量空堆；原堆保持不变","kind":"auto","checklist":"","status":"PASS","actual":"code=SPLIT_INVALID；堆数=1；原堆数量=10"},{"id":"B21","group":"B 道具操作","title":"拆分数量大于总数量","method":"等价类·无效","priority":"P1","pre":"持有 I1001×10 一堆","steps":"1. 拆分数量填 11（大于总数）　2. 确认","expect":"拦截；不产生负数量；原堆保持不变","kind":"auto","checklist":"","status":"PASS","actual":"code=SPLIT_INVALID；原堆数量=10；负数堆=无"},{"id":"B22","group":"B 道具操作","title":"拖放道具到非法格子","method":"状态迁移·非法","priority":"P2","pre":"背包容量 200；持有 I1009×1 位于格位 0","steps":"1. 拖放该道具到格位 250（越界）　2. 观察位置","expect":"拒绝拖放；道具保持在原格位；不出现数组越界或道具丢失","kind":"auto","checklist":"","status":"PASS","actual":"code=ILLEGAL_SLOT；格位=0（预期0）；道具数=1"},{"id":"C01","group":"C 状态与迁移","title":"未获得 → 持有（拾取）","method":"状态迁移·合法","priority":"P0","pre":"道具处于「未获得」状态；地面有 1 个合法掉落","steps":"1. 执行拾取　2. 查状态迁移流水","expect":"合法迁移「未获得→持有」；流水记录完整；道具状态为持有","kind":"auto","checklist":"","status":"PASS","actual":"迁移=未获得→持有；当前状态=持有"},{"id":"C02","group":"C 状态与迁移","title":"持有 → 使用中（使用）","method":"状态迁移·合法","priority":"P0","pre":"道具处于「持有」状态","steps":"1. 点击使用　2. 查状态迁移流水","expect":"合法迁移含「持有→使用中」；服务端有使用记录","kind":"auto","checklist":"","status":"PASS","actual":"迁移=持有→使用中→已消耗"},{"id":"C03","group":"C 状态与迁移","title":"使用中 → 已消耗","method":"状态迁移·合法","priority":"P0","pre":"道具已进入「使用中」状态","steps":"1. 等待结算完成　2. 查最终状态与流水","expect":"合法迁移「使用中→已消耗」；道具移除；效果只结算 1 次","kind":"auto","checklist":"","status":"PASS","actual":"迁移=持有→使用中→已消耗；最终状态=已消耗；效果=1次"},{"id":"C04","group":"C 状态与迁移","title":"持有 → 已过期（限时到期）","method":"状态迁移·合法","priority":"P1","pre":"持有限时道具 I1003，5 分钟后到期；服务器时间可控","steps":"1. 推进服务器时间至到期时刻之后　2. 观察道具状态","expect":"合法迁移「持有→已过期」；状态标记为已过期；倒计时归零不为负","kind":"auto","checklist":"","status":"PASS","actual":"状态=已过期；倒计时=0ms"},{"id":"C05","group":"C 状态与迁移","title":"持有 → 已锁定","method":"状态迁移·合法","priority":"P1","pre":"道具处于「持有」状态","steps":"1. 点击锁定　2. 查状态","expect":"合法迁移「持有→已锁定」；格位保持不变","kind":"auto","checklist":"","status":"PASS","actual":"code=LOCKED；状态=已锁定；格位=0"},{"id":"C06","group":"C 状态与迁移","title":"已锁定 → 持有（解锁）","method":"状态迁移·合法","priority":"P1","pre":"道具处于「已锁定」状态","steps":"1. 点击解锁　2. 查状态","expect":"合法迁移「已锁定→持有」；数量与格位不变","kind":"auto","checklist":"","status":"PASS","actual":"code=UNLOCKED；状态=持有；数量=1"},{"id":"C07","group":"C 状态与迁移","title":"已消耗 → 持有（非法回退）","method":"状态迁移·非法","priority":"P0","pre":"服务端存在状态为「已消耗」的道具（伪造数据/旧存档）","steps":"1. 直接对该道具发起使用　2. 观察服务端校验","expect":"非法迁移被拒绝；状态不得回退到「持有」；不产生效果与消耗记录","kind":"auto","checklist":"","status":"PASS","actual":"code=ILLEGAL_STATE；状态=已消耗；效果=0次"},{"id":"C08","group":"C 状态与迁移","title":"已过期 → 使用中（非法使用）","method":"状态迁移·非法","priority":"P0","pre":"持有限时道具；停留在背包界面未刷新；服务器时间已越过过期时刻","steps":"1. 不重进游戏、不刷新界面　2. 直接点击使用　3. 查服务端校验","expect":"服务端拒绝；提示已过期；不产生效果；道具被标记或清理为已过期","kind":"auto","checklist":"","status":"PASS","actual":"界面显示状态=持有；使用响应=EXPIRED；效果=0次；服务端状态=已过期"},{"id":"C09","group":"C 状态与迁移","title":"已锁定 → 已消耗（非法使用）","method":"状态迁移·非法","priority":"P0","pre":"道具处于「已锁定」状态；客户端按钮未置灰","steps":"1. 直接对该道具发起使用　2. 观察服务端校验","expect":"非法迁移「已锁定→已消耗」被拒绝；道具仍为已锁定；不产生效果","kind":"auto","checklist":"","status":"PASS","actual":"code=LOCKED；状态=已锁定；效果=0次"},{"id":"C10","group":"C 状态与迁移","title":"跨天 00:00:00 限时道具到期","method":"边界值·时间","priority":"P0","pre":"限时道具在当日 23:59:59 后（次日 00:00:00）到期；服务器时间可控","steps":"1. 23:59:59 查看倒计时　2. 推进到 00:00:00　3. 观察状态与倒计时","expect":"00:00:00 准时失效；倒计时不出现 -1 秒或 00:00:00 仍可使用；状态为已过期","kind":"auto","checklist":"","status":"PASS","actual":"23:59:59倒计时=1000ms；00:00:00倒计时=0ms；状态=已过期；使用=EXPIRED"},{"id":"C11","group":"C 状态与迁移","title":"23:59:59 使用限时道具","method":"边界值·时间","priority":"P1","pre":"限时道具将在 00:00:00 到期；当前服务器时间 23:59:59","steps":"1. 在 23:59:59 点击使用　2. 观察结果","expect":"未到期应允许使用；效果结算 1 次；道具消耗；不出现提前失效","kind":"auto","checklist":"","status":"PASS","actual":"23:59:59使用=USED；效果=1次；状态=已消耗"},{"id":"C12","group":"C 状态与迁移","title":"服务器时间与本地时间不一致","method":"边界值","priority":"P0","pre":"服务器时间与本地时间不一致（玩家把本地时间往回调 1 小时）；限时道具已按服务器时间过期","steps":"1. 修改客户端本地时间　2. 不刷新界面直接点击使用　3. 观察判定依据","expect":"以服务器时间为唯一判据；使用被拒绝；客户端改时间不能绕过有效期","kind":"auto","checklist":"","status":"PASS","actual":"客户端时间判定为已过期=false；服务端响应=EXPIRED；效果=0次"},{"id":"C13","group":"C 状态与迁移","title":"切后台 5 分钟后返回","method":"场景法","priority":"P1","pre":"持有限时道具；可切后台 5 分钟后返回","steps":"1. 切后台　2. 等待 5 分钟　3. 返回游戏并刷新界面","expect":"返回后界面状态与服务器一致（已过期）；倒计时不出现负数；使用被拒绝","kind":"auto","checklist":"","status":"PASS","actual":"返回后界面状态=已过期；倒计时=0ms；使用=EXPIRED"},{"id":"C14","group":"C 状态与迁移","title":"断线重连后道具状态一致","method":"场景法","priority":"P0","pre":"道具数据已发生变更；可模拟断线重连","steps":"1. 使用 1 个道具　2. 断线　3. 重连后读取服务端状态","expect":"重连后以服务端为准；客户端与服务端数量、状态、效果次数完全一致","kind":"auto","checklist":"","status":"PASS","actual":"客户端数量=2，服务端数量=2；状态=持有/持有；格数一致=true"},{"id":"C15","group":"C 状态与迁移","title":"多端同时登录操作同一道具","method":"场景法","priority":"P0","pre":"同一账号在设备 A 与 B 同时在线；持有 I1001×5","steps":"1. 两端几乎同时使用同一道具　2. 查两端显示与服务端记录","expect":"仅一次生效；另一端收到状态刷新；道具只扣 1 个；不出现重复效果或负数","kind":"auto","checklist":"","status":"PASS","actual":"成功请求=1/2；响应=USED/IN_FLIGHT；效果=1次；剩余=4"},{"id":"C16","group":"C 状态与迁移","title":"重进游戏后状态恢复","method":"场景法","priority":"P0","pre":"背包中有普通道具与锁定道具；已产生使用流水","steps":"1. 记录状态　2. 重进游戏　3. 逐项比对","expect":"道具 ID、数量、状态、格位与效果次数全部恢复且以服务端为准","kind":"auto","checklist":"","status":"PASS","actual":"重进前=U00001:1:已锁定:0|U00002:2:持有:1；重进后=U00001:1:已锁定:0|U00002:2:持有:1；效果次数=1"},{"id":"D01","group":"D 判定表：整理规则","title":"有空格 + 无可堆叠 + 无锁定","method":"判定表 R1","priority":"P2","pre":"容量 8；有空格；无可堆叠道具；无锁定道具","steps":"1. 点击「整理」　2. 观察规则命中与排列结果","expect":"命中 R1：按默认顺序紧凑排列；合并数 0；道具总数不变","kind":"auto","checklist":"","status":"PASS","actual":"规则=R1；合并=0；道具格数=4→4"},{"id":"D02","group":"D 判定表：整理规则","title":"有空格 + 无可堆叠 + 有锁定","method":"判定表 R2","priority":"P1","pre":"容量 8；有空格；无可堆叠道具；有锁定道具","steps":"1. 记录锁定道具格位　2. 点击整理　3. 核对格位","expect":"命中 R2：排列但锁定格位保留；锁定道具位置不变","kind":"auto","checklist":"","status":"PASS","actual":"规则=R2；锁定格位=3→3；锁定移动数=0"},{"id":"D03","group":"D 判定表：整理规则","title":"有空格 + 有可堆叠 + 无锁定","method":"判定表 R3","priority":"P1","pre":"容量 8；有空格；有两堆可合并同类道具；无锁定道具","steps":"1. 点击整理　2. 核对合并结果","expect":"命中 R3：先合并同类再紧凑排列；合并数量 > 0；总数守恒","kind":"auto","checklist":"","status":"PASS","actual":"规则=R3；合并=3个；I1001总数=6→6"},{"id":"D04","group":"D 判定表：整理规则","title":"有空格 + 有可堆叠 + 有锁定","method":"判定表 R4","priority":"P0","pre":"容量 8；有空格；有两堆可合并同类道具；有 1 个锁定道具","steps":"1. 记录全部道具 ID、数量与锁定状态　2. 点击整理　3. 等待动画结束并核对","expect":"命中 R4：同类正确合并；锁定道具不参与合并与移动、位置不变；整理前后道具 ID 与总数量完全一致","kind":"auto","checklist":"","status":"PASS","actual":"规则=R4；合并=3；锁定格位=3→3；锁定数量=1→1；ID种类集合[I1001,I1009]一致=true；总数量=8→8"},{"id":"D05","group":"D 判定表：整理规则","title":"无空格 + 无可堆叠 + 无锁定","method":"判定表 R5","priority":"P2","pre":"容量 8；无空格；无可堆叠道具；无锁定道具","steps":"1. 点击整理　2. 观察按钮状态与响应","expect":"命中 R5：无可整理内容，提示或按钮置灰；数据完全不变","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R5；数据未变=true"},{"id":"D06","group":"D 判定表：整理规则","title":"无空格 + 无可堆叠 + 有锁定","method":"判定表 R6","priority":"P1","pre":"容量 8；无空格；无可堆叠道具；有锁定道具","steps":"1. 记录锁定格位　2. 点击整理　3. 核对","expect":"命中 R6：无可整理内容；锁定道具保持原位；数据完全不变","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R6；锁定格位=7；数据未变=true"},{"id":"D07","group":"D 判定表：整理规则","title":"无空格 + 有可堆叠 + 无锁定","method":"判定表 R7","priority":"P1","pre":"容量 8；无空格；有两堆可合并同类道具；无锁定道具","steps":"1. 点击整理　2. 核对合并后空格数","expect":"命中 R7：仅执行合并；合并后腾出空格；总数量守恒","kind":"auto","checklist":"","status":"PASS","actual":"规则=R7；合并=3；格数=8→7（腾出空格）；总数量=12→12"},{"id":"D08","group":"D 判定表：整理规则","title":"无空格 + 有可堆叠 + 有锁定","method":"判定表 R8","priority":"P0","pre":"容量 8；无空格；有两堆可合并同类道具；有 1 个锁定道具","steps":"1. 记录锁定道具状态　2. 点击整理　3. 核对","expect":"命中 R8：只合并非锁定道具；锁定道具不参与合并且位置不变；总数守恒","kind":"auto","checklist":"","status":"PASS","actual":"规则=R8；合并=3；锁定格位=7→7；总数量=12→12"},{"id":"D09","group":"D 判定表：整理规则","title":"全部为锁定道具时整理","method":"判定表·边界","priority":"P1","pre":"容量 4；4 个道具全部为已锁定状态","steps":"1. 记录所有格位　2. 点击整理　3. 核对","expect":"全部锁定时不产生任何移动；格位逐一不变；不报错不崩溃","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R6；格位未变=true"},{"id":"D10","group":"D 判定表：整理规则","title":"全部为堆叠已满道具时整理","method":"判定表·边界","priority":"P1","pre":"容量 4；4 堆同类道具均已达到堆叠上限 99","steps":"1. 点击整理　2. 观察是否误判为可合并","expect":"全部满堆时不存在可合并内容；不得产生 0 数量空堆或数量溢出；数据不变","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R5；堆数=4；无异常堆=true"},{"id":"D11","group":"D 判定表：整理规则","title":"整理过程中断网","method":"场景法","priority":"P0","pre":"存在可整理内容；可在点击整理瞬间断网","steps":"1. 断网后点击整理　2. 恢复网络重连　3. 核对整理结果与总数","expect":"断网期间服务端数据不变；重连重放后状态一致；不出现重复整理导致的数据错乱或丢失","kind":"auto","checklist":"","status":"PASS","actual":"断网响应=OFFLINE；断网期间总数未变=true；重连后总数=8→8"},{"id":"D12","group":"D 判定表：整理规则","title":"整理前后道具总数与 ID 不变","method":"场景法·校验","priority":"P0","pre":"含普通、可堆叠、锁定三类道具；整理前已记录基线","steps":"1. 记录整理前各 itemId 总数量、ID 集合与锁定状态　2. 执行整理　3. 逐项比对","expect":"整理前后各 itemId 总数量不变、ID 集合不变、锁定状态与格位不变；验证「数据不变」而非「看起来整齐」","kind":"auto","checklist":"","status":"PASS","actual":"数量映射={\"I1001\":6,\"I1009\":2}→{\"I1001\":6,\"I1009\":2}；ID集合一致=true；锁定格位一致=true"},{"id":"E01","group":"E 场景法：完整链路","title":"基本流：拾取→查看→使用→消耗","method":"场景法·基本流","priority":"P0","pre":"账号已登录；副本可产生掉落；背包有空格","steps":"1. 击杀怪物产生掉落　2. 拾取　3. 打开背包查看　4. 使用　5. 确认消耗","expect":"基本流走通：流水依次含 pickup 与 use；ID 与数量正确；效果结算 1 次；道具最终移除","kind":"auto","checklist":"","status":"PASS","actual":"流水=pickup→use；效果=1次；背包=0格"},{"id":"E02","group":"E 场景法：完整链路","title":"拾取→丢弃→找回","method":"场景法·备选流","priority":"P2","pre":"地面有 1 个掉落；支持丢弃找回","steps":"1. 拾取　2. 丢弃并确认　3. 通过回收入口找回","expect":"备选流走通：找回后道具重新入包；数量与 ID 与最初一致；不重复发放","kind":"auto","checklist":"","status":"PASS","actual":"找回=RECOVERED；I1001数量=1；背包=1格"},{"id":"E03","group":"E 场景法：完整链路","title":"拾取→锁定→批量整理","method":"场景法","priority":"P1","pre":"地面有 3 个掉落；支持锁定与整理","steps":"1. 全部拾取　2. 锁定其中 1 个　3. 执行整理　4. 核对","expect":"锁定道具不参与整理移动；总数量与 ID 不变；整理结果符合判定表规则","kind":"auto","checklist":"","status":"PASS","actual":"整理=SORTED（R2）；锁定格位=0→0；I1001总数=30→30"},{"id":"E04","group":"E 场景法：完整链路","title":"商城购买→背包已满→邮件补发","method":"场景法","priority":"P0","pre":"背包 200 格满；金币 1000；商城有货","steps":"1. 商城购买 I1002×1　2. 支付　3. 查看背包与邮件","expect":"扣款成功后因满包自动邮件补发；玩家可领取；全程有明确提示；道具不丢失","kind":"auto","checklist":"","status":"PASS","actual":"金币=1000→980；邮件=1封（背包已满，邮件补发）；静默丢失=false"},{"id":"E05","group":"E 场景法：完整链路","title":"副本掉落→自动拾取→满包提示","method":"场景法","priority":"P1","pre":"背包 200 格满；副本可产生掉落并自动拾取","steps":"1. 击杀怪物产生掉落　2. 触发自动拾取　3. 观察提示与地面","expect":"给出「背包已满」明确提示；掉落物保留在地面；背包仍 200 格；不吞道具","kind":"auto","checklist":"","status":"PASS","actual":"code=BAG_FULL；提示=\"背包已满，掉落物保留在地面\"；地面=1个；背包=200格"},{"id":"E06","group":"E 场景法：完整链路","title":"交易接收→到账→状态刷新","method":"场景法","priority":"P0","pre":"账号在线；交易对方发起交付 I1002×1；背包有空格","steps":"1. 接收交易　2. 查看到账　3. 检查客户端状态刷新","expect":"道具到账；数量与 ID 正确；客户端视图与服务端一致；无延迟显示","kind":"auto","checklist":"","status":"PASS","actual":"code=GRANTED；服务端数量=1；客户端显示=1"},{"id":"E07","group":"E 场景法：完整链路","title":"使用过程中断网","method":"场景法·异常","priority":"P0","pre":"持有 I1001×2；可在点击使用瞬间断网","steps":"1. 断网后点击使用　2. 恢复网络并等待重连　3. 核对数量与效果","expect":"一致性约束：重连后要么成功扣 1 且结算 1 次，要么完全不扣不结算；不得「扣了但没效果」","kind":"auto","checklist":"","status":"PASS","actual":"断网响应=OFFLINE；断网前数量=2、效果=0；重连后数量=1、效果=1；一致性=true"},{"id":"E08","group":"E 场景法：完整链路","title":"使用过程中杀进程","method":"场景法·异常","priority":"P0","pre":"持有 I1001×2；已点击使用并获得成功响应；可强杀进程","steps":"1. 使用道具　2. 响应到达后立即杀进程　3. 重进游戏","expect":"以服务端权威数据为准：道具扣 1、效果结算 1 次；重进后不回档、不重复扣","kind":"auto","checklist":"","status":"PASS","actual":"服务端数量=1；效果=1次；重进后客户端数量=1"},{"id":"E09","group":"E 场景法：完整链路","title":"使用回调重复推送","method":"场景法·幂等","priority":"P0","pre":"持有 I1001×5；可在测试环境重放同一条使用成功响应 3 次","steps":"1. 使用 1 个道具并捕获 opId　2. 将同一响应重复推送 3 次　3. 查数量与效果流水","expect":"效果只结算一次；道具只扣 1 个；服务端有幂等去重；不产生重复副作用","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/USED/USED；效果=1次；剩余=4；使用流水=1条"},{"id":"E10","group":"E 场景法：完整链路","title":"弱网下重复点击使用","method":"场景法","priority":"P0","pre":"持有 I1001×5；弱网 300ms 延迟 10% 丢包；按钮可重复点击","steps":"1. 在 200ms 内连续点击使用两次　2. 等待两个响应都返回","expect":"两次点击合并为一次有效操作；只扣 1 个道具、只结算 1 次效果；不出现「扣 2 结算 1」","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/IN_FLIGHT；效果=1次；剩余=4"},{"id":"E11","group":"E 场景法：完整链路","title":"后台推送道具时前台无刷新","method":"场景法","priority":"P1","pre":"玩家停留在背包界面；服务端后台推送 1 个道具","steps":"1. 后台推送道具（不主动通知前端）　2. 观察前台显示　3. 手动刷新界面","expect":"推送已写入服务端；前台在无刷新时可暂时落后；刷新后立即与服务端一致；不出现静默吞掉","kind":"auto","checklist":"","status":"PASS","actual":"推送=GRANTED；服务端=1格、前台=0格（落后1）；刷新后一致=true"},{"id":"E12","group":"E 场景法：完整链路","title":"热更新后背包数据兼容","method":"场景法","priority":"P0","pre":"存在热更新前产生的背包存档；准备 v2.4.2 新配置（新增 season / schema 字段）","steps":"1. 用旧版本产生背包数据　2. 热更新到新版本　3. 打开背包并使用道具","expect":"旧道具可正常显示与使用；新增字段有默认值；不出现解析失败、闪退或道具丢失","kind":"auto","checklist":"","status":"PASS","actual":"热更新=HOT_UPDATED；补字段=2个；版本=2.4.2；使用=USED"},{"id":"E13","group":"E 场景法：完整链路","title":"老版本存档在新版本打开","method":"场景法","priority":"P0","pre":"存在 v2.4.1 老版本存档（缺 slot / season / schema 字段）","steps":"1. 用新版本客户端打开老存档　2. 检查字段与显示　3. 使用道具","expect":"兼容加载不报错；缺失字段有默认值；道具数量正确；可正常使用","kind":"auto","checklist":"","status":"PASS","actual":"加载=LEGACY_LOADED；补齐 slot=0、schema=1、uses=1；使用=USED；剩余=1"},{"id":"E14","group":"E 场景法：完整链路","title":"跨服转区后道具保留","method":"场景法","priority":"P0","pre":"账号在 S1 服持有 3 个道具；可执行跨服转区","steps":"1. 记录道具 uid 与数量　2. 转区到 S2　3. 打开背包核对","expect":"道具全部保留；uid、数量、状态不变；不出现重复发放或丢失","kind":"auto","checklist":"","status":"PASS","actual":"转区=TRANSFERRED；目标服=S2；数据一致=true"},{"id":"E15","group":"E 场景法：完整链路","title":"账号封禁期间道具到期","method":"场景法","priority":"P2","pre":"账号处于封禁状态；持有限时道具即将到期","steps":"1. 封禁期间推进服务器时间越过到期时刻　2. 解封　3. 查道具状态","expect":"到期判定仍以服务器时间为准；解封后道具不会「复活」；不因封禁产生额外补偿","kind":"auto","checklist":"","status":"PASS","actual":"解封后状态=已过期；倒计时=0ms；封禁标记=false"},{"id":"E16","group":"E 场景法：完整链路","title":"服务器回档后道具状态","method":"场景法","priority":"P0","pre":"已取得服务器快照；快照后发生过使用消耗","steps":"1. 记录快照　2. 使用道具　3. 执行服务器回档　4. 核对状态","expect":"回档后道具数量、状态与效果计数以快照为准；不出现「状态回退但流水未回退」的不一致","kind":"auto","checklist":"","status":"PASS","actual":"回档前数量=2、效果=1；回档后数量=3、效果=0"},{"id":"F01","group":"F 兼容、性能与界面","title":"小屏幕分辨率下背包布局","method":"兼容性","priority":"P2","pre":"720×1280 小屏分辨率；背包内有至少 20 个道具","steps":"1. 打开背包　2. 滑到最右一列　3. 观察图标显示","expect":"最后一列图标完整显示、可正常点击；布局算法计算的内容宽度不超过视口宽度","kind":"proxy","checklist":"","status":"PASS","actual":"视口=720px；列数=15；内容宽=680px；溢出=0px；末列裁切=false"},{"id":"F02","group":"F 兼容、性能与界面","title":"平板横竖屏切换","method":"兼容性","priority":"P2","pre":"平板设备；分别处于横屏 1024px 与竖屏 768px","steps":"1. 横屏打开背包　2. 切换竖屏　3. 分别检查布局","expect":"两种方向下列数自适应且均无横向溢出；切换后道具可点击","kind":"proxy","checklist":"","status":"PASS","actual":"横屏=22列/溢出0px；竖屏=17列/溢出0px"},{"id":"F03","group":"F 兼容、性能与界面","title":"折叠屏展开与折叠","method":"兼容性","priority":"P2","pre":"折叠屏设备；折叠态 600px 与展开态 1100px","steps":"1. 折叠态打开背包　2. 展开屏幕　3. 分别检查布局","expect":"展开/折叠均不裁切；列数随宽度增加；无布局残留","kind":"proxy","checklist":"","status":"PASS","actual":"折叠=13列/溢出0px；展开=24列/溢出0px"},{"id":"F04","group":"F 兼容、性能与界面","title":"低端机打开 200 格背包耗时","method":"性能","priority":"P1","pre":"中低端机型基准；背包内有 200 个道具；已接入耗时采集","steps":"1. 记录开始时间　2. 打开 200 格背包　3. 记录结束时间","expect":"同步构建 200 格视图数据的耗时低于宽松阈值 500ms（代理指标，不替代真机帧耗时）","kind":"proxy","checklist":"","status":"PASS","actual":"打开耗时=0ms（阈值<500ms）；视图格数=200"},{"id":"F05","group":"F 兼容、性能与界面","title":"连续开关背包 50 次内存增长","method":"性能","priority":"P1","pre":"中端机型；已接入对象计数；背包内有 150 个道具","steps":"1. 记录初始监听器与缓存对象数　2. 连续开关背包 50 次　3. 等待 GC 后复查","expect":"监听器与缓存对象数回到基线（无累积增长）；不出现 OOM（代理指标，非真实内存采样）","kind":"proxy","checklist":"","status":"PASS","actual":"50次开关后监听器=0（基线0）；缓存对象=0（基线0）"},{"id":"F06","group":"F 兼容、性能与界面","title":"背包快速滚动帧率","method":"性能","priority":"P2","pre":"中端机型；背包 200 格；已接入帧率采集工具","steps":"1. 打开背包　2. 快速连续滚动列表　3. 采集帧率曲线","expect":"滚动过程无持续掉帧，最低帧率与项目标准对齐；无卡顿白块","kind":"manual","checklist":"真机验证项：需在目标机型上采集 FPS 曲线与 GPU 耗时，记录最低帧率、掉帧次数与阈值；纯逻辑场景无法模拟刷新率与合成器行为。","status":"MANUAL","actual":"需真机/人工判定：真机验证项：需在目标机型上采集 FPS 曲线与 GPU 耗时，记录最低帧率、掉帧次数与阈值；纯逻辑场景无法模拟刷新率与合成器行为。"},{"id":"F07","group":"F 兼容、性能与界面","title":"道具图标加载失败的占位","method":"功能","priority":"P2","pre":"道具图标资源 URL 缺失或加载失败","steps":"1. 打开背包　2. 观察该道具格位","expect":"显示内置占位图；格位仍可点击；不出现空白格或崩溃","kind":"auto","checklist":"","status":"PASS","actual":"占位图启用=true；资源=builtin://icon_missing"},{"id":"F08","group":"F 兼容、性能与界面","title":"道具名称超长时的显示","method":"边界值","priority":"P2","pre":"存在名称长度 30 字符的道具；名称显示上限 12 字符","steps":"1. 在背包列表查看名称　2. 检查截断与省略号","expect":"按字符安全截断并带省略号；不撑破布局；不截断出半个代理对","kind":"auto","checklist":"","status":"PASS","actual":"原长=38字符；截断后=13字符；结果=\"超长道具名称测试用字符串…\""},{"id":"F09","group":"F 兼容、性能与界面","title":"道具名称含特殊字符","method":"等价类·无效","priority":"P1","pre":"具备自定义道具名称能力；输入含 % 、单引号、分号、尖括号与 emoji 的名称","steps":"1. 保存名称　2. 在背包、交易行、排行榜三处查看　3. 检查脚本注入","expect":"正确保存并原样显示；不引发脚本执行；三处显示一致；尖括号被实体转义","kind":"auto","checklist":"","status":"PASS","actual":"三处一致=true；含可执行<script>=false；转义后片段=药%水&#39;;&lt;script&gt;alert(1"},{"id":"F10","group":"F 兼容、性能与界面","title":"多语言下名称截断","method":"本地化","priority":"P2","pre":"多语言环境；名称含中文、英文、emoji 混合字符","steps":"1. 设置不同语言　2. 查看截断后的名称","expect":"按 Unicode 码点截断；emoji 不被切成两半；不出现乱码方块","kind":"auto","checklist":"","status":"PASS","actual":"截断结果=\"中文Name混合…\"；码点数=9；替换字符=false"},{"id":"F11","group":"F 兼容、性能与界面","title":"数量超过显示上限（999999+）","method":"边界值","priority":"P1","pre":"道具数量超过显示上限 999999","steps":"1. 查看数量角标格式化结果","expect":"显示为「999999+」；不出现数值溢出或科学计数法；实际数量仍以服务端整数为准","kind":"auto","checklist":"","status":"PASS","actual":"formatQty(1000000)=\"999999+\""},{"id":"F12","group":"F 兼容、性能与界面","title":"数量为 0 时不显示角标","method":"边界值","priority":"P2","pre":"道具数量为 0（异常数据或边界）","steps":"1. 查看数量角标","expect":"数量为 0 时不显示角标；不出现「0」字样；不出现负数","kind":"auto","checklist":"","status":"PASS","actual":"formatQty(0)=\"\"（空字符串即不渲染角标）"},{"id":"F13","group":"F 兼容、性能与界面","title":"使用时的音效与震动反馈","method":"UI","priority":"P3","pre":"设备音量与震动权限正常；背包中有可用消耗品","steps":"1. 使用道具　2. 听音效与感受震动　3. 在静音模式下重复","expect":"音效与震动按设置触发；静音模式下不误触发；无延迟与重复播放","kind":"manual","checklist":"真机验证项：需人工听感与触觉确认，并覆盖静音/勿扰/无障碍设置组合；纯逻辑场景无音频与马达接口。","status":"MANUAL","actual":"需真机/人工判定：真机验证项：需人工听感与触觉确认，并覆盖静音/勿扰/无障碍设置组合；纯逻辑场景无音频与马达接口。"},{"id":"F14","group":"F 兼容、性能与界面","title":"新手引导期间背包入口","method":"场景法","priority":"P2","pre":"账号处于新手引导阶段；背包入口存在","steps":"1. 引导期间尝试进入背包　2. 引导结束后再次进入","expect":"引导期间按需求锁定或给出提示；引导结束后入口恢复可用；不出现卡死","kind":"auto","checklist":"","status":"PASS","actual":"引导中锁定=true（原因\"新手引导期间入口按需求锁定\"）；引导后可进入=true"},{"id":"F15","group":"F 兼容、性能与界面","title":"无障碍与大字体模式","method":"兼容性","priority":"P3","pre":"开启系统大字体（fontScale=1.5）与无障碍模式；视口 720px","steps":"1. 开启大字体　2. 打开背包　3. 检查图标与文字可读性","expect":"布局单元随字级放大后仍不横向溢出；文字不被裁切（代理指标，真实可读性需人工确认）","kind":"proxy","checklist":"","status":"PASS","actual":"字级=1.5；单元=60px；列数=10；溢出=0px"},{"id":"F16","group":"F 兼容、性能与界面","title":"深色模式下图标对比度","method":"兼容性","priority":"P3","pre":"深色模式；前景 #E8EAF0，背景 #1A1D24","steps":"1. 切换深色模式　2. 计算图标与背景的对比度","expect":"WCAG 对比度 ≥ 4.5:1；低对比度图标需有描边或替代色（计算值，非屏幕实测亮度）","kind":"proxy","checklist":"","status":"PASS","actual":"对比度=14.02:1（阈值≥4.5）"}]},"injected":{"label":"缺陷注入版（6 个典型缺陷）","summary":{"total":100,"auto":91,"proxy":7,"manual":2,"pass":80,"fail":18,"manualCount":2,"missing":0},"results":[{"id":"A01","group":"A 容量与拾取","title":"空背包首次拾取单个道具","method":"边界值·零点","priority":"P1","pre":"账号已登录；容量上限 200；背包为空；网络正常","steps":"1. 生成 1 个掉落物 I1001×1　2. 点击拾取　3. 查看服务端、客户端与地面","expect":"入包成功；服务端 1 格；客户端显示 1 格；地面掉落物消失；空状态引导消失","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；服务端=1格；客户端=1格；地面=0个"},{"id":"A02","group":"A 容量与拾取","title":"背包仅 1 个道具时拾取","method":"边界值·内点","priority":"P2","pre":"背包已有 1 个不堆叠道具；容量 200","steps":"1. 生成掉落　2. 点击拾取　3. 核对数量与排序","expect":"拾取成功；背包共 2 格；两格道具 ID 与数量均正确","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；背包=2格；I1002数量=1"},{"id":"A03","group":"A 容量与拾取","title":"背包 199 格时拾取第 200 个","method":"边界值·内点","priority":"P1","pre":"背包已放入 199 个不堆叠道具（差 1 格满）","steps":"1. 生成掉落　2. 点击拾取第 200 个　3. 核对容量","expect":"仍可拾取第 200 个；背包恰好 200 格；无溢出与报错","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；背包=200格（上限200）"},{"id":"A04","group":"A 容量与拾取","title":"背包 200 格满时拾取第 201 个","method":"边界值·上点","priority":"P0","pre":"背包容量 200；已放入 200 个不堆叠道具；地面有 1 个掉落","steps":"1. 生成掉落　2. 点击拾取第 201 个　3. 观察提示、掉落物与背包","expect":"提示「背包已满」；掉落物保留在地面不被吞掉；背包仍为 200；服务端无新增；客户端无新增","kind":"auto","checklist":"","status":"FAIL","actual":"code=BAG_FULL；地面保留=0个；背包=200格；客户端=200格"},{"id":"A05","group":"A 容量与拾取","title":"背包满时批量拾取（部分可放入）","method":"边界值+场景法","priority":"P1","pre":"背包 200 格满；其中 1 堆 I1001×50（未满堆，可再容纳 49）；地面 4 个 I1001×20","steps":"1. 执行批量拾取 4 个掉落　2. 统计成功/失败数　3. 核对地面剩余与总数量","expect":"部分成功：能合并入未满堆的先入包；放不下的保留在地面并给出提示；背包不超 200；总数量守恒","kind":"auto","checklist":"","status":"FAIL","actual":"成功=2，拒绝=2；地面剩余=0个；背包=200格；I1001总数=90"},{"id":"A06","group":"A 容量与拾取","title":"背包满时系统邮件发放道具","method":"边界值","priority":"P0","pre":"背包 200 格满；系统邮件待发放 I1001×1","steps":"1. 触发系统邮件发放　2. 查收邮件与背包","expect":"背包不溢出；道具进入邮件且可领取；有明确提示；不得静默丢失","kind":"auto","checklist":"","status":"PASS","actual":"code=GRANT_TO_MAIL；邮件=1封；背包=200格"},{"id":"A07","group":"A 容量与拾取","title":"背包满时商城购买道具","method":"边界值","priority":"P0","pre":"背包 200 格满；账号钻石/金币 1000；商城商品 I1002 单价 20","steps":"1. 打开商城购买 I1002×1　2. 支付　3. 查看货币、背包、邮件与提示","expect":"要么拦截购买且不扣款，要么扣款成功后通过邮件补发并给出提示；绝不出现「扣款成功、道具丢失、无提示」","kind":"auto","checklist":"","status":"FAIL","actual":"扣款=20；code=GRANTED；邮件补发=0封；静默丢失=true"},{"id":"A08","group":"A 容量与拾取","title":"扩容后立即再次拾取","method":"状态迁移","priority":"P1","pre":"背包 200 格满；已购买扩容道具","steps":"1. 扩容至 201 格　2. 立即拾取新掉落　3. 核对容量与道具","expect":"扩容即时生效；拾取成功；背包 201 格；无旧数据丢失","kind":"auto","checklist":"","status":"PASS","actual":"扩容=CAPACITY_SET；拾取=INSERTED；容量=201；背包=201格"},{"id":"A09","group":"A 容量与拾取","title":"缩容后道具数量超过新上限","method":"状态迁移·非法","priority":"P0","pre":"背包容量 200；已放入 200 个道具","steps":"1. 发起缩容至 100 格　2. 观察服务端响应　3. 核对道具数量","expect":"缩容被拒绝或按规则明确处理；不得静默丢弃 100 个道具；道具总数仍为 200","kind":"auto","checklist":"","status":"PASS","actual":"code=SHRINK_BLOCKED；容量=200；道具=200个"},{"id":"A10","group":"A 容量与拾取","title":"单次拾取数量超过上限（如 300 个）","method":"边界值·离点","priority":"P1","pre":"背包为空；容量 200；构造单次拾取 300 个的掉落堆","steps":"1. 点击拾取该掉落　2. 观察响应与数据","expect":"拦截超上限拾取；不写入 300 个道具；掉落物保留在地面；服务端不产生脏数据","kind":"auto","checklist":"","status":"PASS","actual":"code=QTY_OVER_LIMIT；背包=0格；地面=1个"},{"id":"A11","group":"A 容量与拾取","title":"拾取数量为 0 的道具堆","method":"等价类·无效","priority":"P2","pre":"地面存在数量为 0 的异常掉落堆","steps":"1. 点击拾取　2. 查服务端道具流水","expect":"拦截；不产生 0 数量道具；不写入脏数据","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_QTY；背包=0格"},{"id":"A12","group":"A 容量与拾取","title":"拾取数量为负数的异常数据","method":"等价类·无效","priority":"P1","pre":"地面存在数量为 -5 的异常掉落堆（伪造包/配置错误）","steps":"1. 点击拾取　2. 查服务端数量字段","expect":"拦截；服务端不得写入负数量；记日志","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_QTY；负数道具=false"},{"id":"A13","group":"A 容量与拾取","title":"拾取不存在的道具 ID","method":"等价类·无效","priority":"P1","pre":"掉落物携带不存在的道具 ID I9999","steps":"1. 点击拾取　2. 观察客户端与日志","expect":"拦截并记日志；不崩溃；不产生无 ID 道具","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_ITEM_ID；背包=0格"},{"id":"A14","group":"A 容量与拾取","title":"拾取已下架或已过期的道具 ID","method":"等价类·无效","priority":"P2","pre":"掉落物携带已下架道具 ID I1008","steps":"1. 点击拾取　2. 观察响应","expect":"拦截并给出明确提示；不产生已下架道具；不崩溃","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_ITEM_ID；背包=0格"},{"id":"A15","group":"A 容量与拾取","title":"快速连续点击拾取 10 次","method":"场景法·重复","priority":"P1","pre":"地面有 1 个掉落；客户端按钮未做防抖（可连点）","steps":"1. 200ms 内连续点击拾取 10 次　2. 查道具流水与地面","expect":"仅入包一次；服务端流水只有 1 条；地面无残留；不重复发放","kind":"auto","checklist":"","status":"PASS","actual":"流水=1条；背包=1格；地面=0个；成功响应=1次"},{"id":"A16","group":"A 容量与拾取","title":"拾取过程中断网","method":"场景法·异常","priority":"P0","pre":"背包 100 格；地面 1 个掉落；可在拾取瞬间断网","steps":"1. 点击拾取的瞬间断开网络　2. 恢复网络并等待重连　3. 核对背包与地面","expect":"一致性约束：重连后要么拾取成功且道具在背包，要么失败且道具仍在地面；不得两端都扣或两端都在","kind":"auto","checklist":"","status":"PASS","actual":"断网响应=OFFLINE；重连后在包=1、在地面=0、合计=1；前后端格数一致=true"},{"id":"A17","group":"A 容量与拾取","title":"拾取成功后杀进程重进","method":"场景法·异常","priority":"P0","pre":"背包 100 格；拾取成功后可强杀进程重进","steps":"1. 拾取 1 个道具　2. 杀进程　3. 重进游戏读取服务端数据","expect":"重进后道具仍在；数量与 ID 与服务端一致；不出现回档或重复","kind":"auto","checklist":"","status":"PASS","actual":"服务端 I1001=1；重进后客户端=1；总格数=101"},{"id":"A18","group":"A 容量与拾取","title":"拾取过程中切换账号","method":"场景法·异常","priority":"P1","pre":"账号 A 有 1 个待拾取掉落；已准备账号 B","steps":"1. 断网后发起拾取　2. 拾取过程中切换账号 B　3. 切回账号 A","expect":"账号数据严格隔离；B 中看不到 A 的道具或掉落；切回 A 后未完成操作不污染 B","kind":"auto","checklist":"","status":"PASS","actual":"切换前响应=OFFLINE；B账号背包=0格/掉落=0个；A账号切回后地面=1个、背包=0格"},{"id":"B01","group":"B 道具操作","title":"使用普通消耗品","method":"场景法·基本流","priority":"P0","pre":"持有 I1001 治疗药水×1；角色等级 60 战士；网络正常","steps":"1. 打开背包　2. 点击使用　3. 查效果流水与道具","expect":"使用成功；效果结算 1 次；道具扣除 1 个；流水含「持有→使用中→已消耗」","kind":"auto","checklist":"","status":"PASS","actual":"code=USED；效果=1次；迁移=持有→使用中→已消耗"},{"id":"B02","group":"B 道具操作","title":"使用剩余次数为 1 的道具","method":"边界值","priority":"P1","pre":"持有三次数卷轴，剩余次数已消耗至 1","steps":"1. 点击使用　2. 观察道具与次数","expect":"允许最后一次使用；使用后剩余次数 0 且道具从背包消失；不出现负数次数","kind":"auto","checklist":"","status":"PASS","actual":"code=USED；剩余次数=0；道具仍在=false"},{"id":"B03","group":"B 道具操作","title":"使用剩余次数为 0 的道具","method":"边界值·零点","priority":"P1","pre":"持有多次使用道具，剩余次数为 0 且道具未从背包消失","steps":"1. 点击使用　2. 观察界面与服务端流水","expect":"不可使用；按钮置灰或提示次数已用尽；不触发效果；服务端不产生消耗记录","kind":"auto","checklist":"","status":"PASS","actual":"code=USES_EXHAUSTED；效果=0次；消耗流水=0条"},{"id":"B04","group":"B 道具操作","title":"连续使用同道具直至耗尽","method":"边界值","priority":"P1","pre":"持有三次数卷轴，剩余次数 3","steps":"1. 连续点击使用直至耗尽　2. 第 4 次继续点击　3. 核对效果次数与道具","expect":"前 3 次效果各结算 1 次；第 4 次被拒绝；道具在次数耗尽时消失；总数守恒","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/USED/USED/ITEM_NOT_FOUND；效果合计=3次；道具仍在=false"},{"id":"B05","group":"B 道具操作","title":"使用后道具是否正确消失","method":"功能","priority":"P0","pre":"持有 I1001×1；客户端已刷新","steps":"1. 使用道具　2. 同时检查服务端与客户端视图","expect":"前后端该 uid 均已移除；不出现「服务端扣了、界面还显示」的幽灵道具","kind":"auto","checklist":"","status":"PASS","actual":"服务端存在=false；客户端存在=false"},{"id":"B06","group":"B 道具操作","title":"等级不足时使用有等级限制的道具","method":"等价类·无效","priority":"P1","pre":"角色等级 1；持有需要等级 10 的战士专属徽章","steps":"1. 点击使用　2. 观察服务端校验结果","expect":"服务端拒绝（不可只依赖客户端置灰）；无效果；道具保留","kind":"auto","checklist":"","status":"PASS","actual":"code=LEVEL_LOW；效果=0次；道具保留=true"},{"id":"B07","group":"B 道具操作","title":"职业不符时使用限定职业道具","method":"等价类·无效","priority":"P1","pre":"角色职业为法师；持有限定「战士」职业的徽章","steps":"1. 点击使用　2. 观察服务端校验结果","expect":"服务端拒绝职业不符；无效果；道具保留","kind":"auto","checklist":"","status":"PASS","actual":"code=JOB_MISMATCH；效果=0次；道具保留=true"},{"id":"B08","group":"B 道具操作","title":"冷却期间再次使用","method":"状态迁移·非法","priority":"P1","pre":"持有冷却型药剂 I1007×2，冷却时间 30 秒","steps":"1. 使用 1 次　2. 冷却期间立即再次使用　3. 推进 30 秒后再使用","expect":"第 2 次被拒绝且不扣道具；冷却结束后第 3 次成功；效果共 2 次","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/COOLDOWN/USED；效果=2次；剩余数量=0"},{"id":"B09","group":"B 道具操作","title":"丢弃道具并确认","method":"场景法","priority":"P1","pre":"持有 I1002×1；支持丢弃二次确认","steps":"1. 选中道具点击丢弃　2. 在确认框点击确认　3. 查看背包","expect":"道具从背包移除；记入可回收记录；前后端一致","kind":"auto","checklist":"","status":"PASS","actual":"code=DISCARDED；背包=0格；回收记录=1条"},{"id":"B10","group":"B 道具操作","title":"丢弃时点击取消","method":"场景法·备选流","priority":"P2","pre":"持有 I1002×1；已打开丢弃确认框","steps":"1. 点击丢弃　2. 在确认框点击取消　3. 查看背包","expect":"数据完全不变；道具数量与状态与操作前一致；不写流水","kind":"auto","checklist":"","status":"PASS","actual":"code=CANCELLED；背包=1格；数量=1"},{"id":"B11","group":"B 道具操作","title":"丢弃已锁定道具","method":"判定表","priority":"P0","pre":"持有 I1002×1 且已锁定","steps":"1. 点击丢弃并确认　2. 查看背包与提示","expect":"拒绝丢弃；道具保留且仍为已锁定；给出明确提示","kind":"auto","checklist":"","status":"PASS","actual":"code=LOCKED；背包=1格；状态=已锁定"},{"id":"B12","group":"B 道具操作","title":"丢弃数量为 0","method":"等价类·无效","priority":"P2","pre":"持有 I1002×1；支持输入丢弃数量","steps":"1. 丢弃数量填 0　2. 确认　3. 查流水","expect":"拦截；道具不变；不产生 0 数量丢弃流水","kind":"auto","checklist":"","status":"PASS","actual":"code=INVALID_QTY；背包=1格；丢弃流水=0条"},{"id":"B13","group":"B 道具操作","title":"批量丢弃中混有锁定道具","method":"判定表","priority":"P0","pre":"背包 3 个道具，第 2 个已锁定；支持多选批量丢弃","steps":"1. 进入批量选择　2. 全选 3 个　3. 确认丢弃","expect":"仅未锁定的 2 个被丢弃；锁定道具保留且仍锁定；提示「已跳过锁定道具」；部分成功被正确处理","kind":"auto","checklist":"","status":"PASS","actual":"丢弃=2个；跳过=1个；剩余=1个（状态已锁定）"},{"id":"B14","group":"B 道具操作","title":"出售道具后金币正确增加","method":"功能","priority":"P0","pre":"账号金币 1000；持有 I1002×1（单价 20）","steps":"1. 出售该道具　2. 查金币与背包","expect":"金币 = 1000 + 20 = 1020；道具移除；流水记录 gain=20","kind":"auto","checklist":"","status":"PASS","actual":"金币=1020（预期1020）；流水gain=20"},{"id":"B15","group":"B 道具操作","title":"出售后金币将超过持有上限","method":"边界值","priority":"P0","pre":"账号金币 = 持有上限 - 5；持有 I1002×1（出售可得 20）","steps":"1. 出售道具　2. 查金币与道具","expect":"出售后金币将超过上限时明确拦截；金币不变；道具不丢失；不出现金币溢出为负","kind":"auto","checklist":"","status":"PASS","actual":"code=GOLD_OVER_CAP；金币=999999994；道具保留=true"},{"id":"B16","group":"B 道具操作","title":"出售已绑定或不可交易道具","method":"等价类·无效","priority":"P1","pre":"持有绑定·新手礼包 I1005（不可交易）","steps":"1. 点击出售　2. 观察响应","expect":"拒绝出售；不增加金币；道具保留；提示不可交易","kind":"auto","checklist":"","status":"PASS","actual":"code=NOT_TRADEABLE；金币=1000；道具保留=true"},{"id":"B17","group":"B 道具操作","title":"出售后立即回购","method":"场景法","priority":"P2","pre":"账号金币 1000；刚售出 I1002×1","steps":"1. 出售道具　2. 立即点击回购　3. 核对金币与道具","expect":"回购成功；金币回到 1000；道具数量与出售前一致；不产生重复发放","kind":"auto","checklist":"","status":"PASS","actual":"code=BUYBACK；金币=1000；I1002数量=1"},{"id":"B18","group":"B 道具操作","title":"堆叠已达上限时拾取同类道具","method":"边界值","priority":"P1","pre":"持有 I1001 一堆已达堆叠上限 99；背包未满","steps":"1. 生成同类道具掉落 1 个　2. 点击拾取　3. 核对堆叠","expect":"不覆盖原堆；新开一格存放；总数量 = 100；每堆均不超过 99","kind":"auto","checklist":"","status":"PASS","actual":"code=INSERTED；堆叠=99+1；总数=100"},{"id":"B19","group":"B 道具操作","title":"将堆叠道具拆分为两堆","method":"功能","priority":"P2","pre":"持有 I1001×10 一堆；背包有空格","steps":"1. 选择拆分数量为 4　2. 确认　3. 核对两堆数量","expect":"拆分为 6 + 4 两堆；总数仍为 10；生成新 uid；不出现数量丢失","kind":"auto","checklist":"","status":"PASS","actual":"code=SPLIT；两堆=4+6；总数=10"},{"id":"B20","group":"B 道具操作","title":"拆分数量等于总数量","method":"边界值","priority":"P2","pre":"持有 I1001×10 一堆","steps":"1. 拆分数量填 10（等于总数）　2. 确认","expect":"拦截；不产生 0 数量空堆；原堆保持不变","kind":"auto","checklist":"","status":"PASS","actual":"code=SPLIT_INVALID；堆数=1；原堆数量=10"},{"id":"B21","group":"B 道具操作","title":"拆分数量大于总数量","method":"等价类·无效","priority":"P1","pre":"持有 I1001×10 一堆","steps":"1. 拆分数量填 11（大于总数）　2. 确认","expect":"拦截；不产生负数量；原堆保持不变","kind":"auto","checklist":"","status":"PASS","actual":"code=SPLIT_INVALID；原堆数量=10；负数堆=无"},{"id":"B22","group":"B 道具操作","title":"拖放道具到非法格子","method":"状态迁移·非法","priority":"P2","pre":"背包容量 200；持有 I1009×1 位于格位 0","steps":"1. 拖放该道具到格位 250（越界）　2. 观察位置","expect":"拒绝拖放；道具保持在原格位；不出现数组越界或道具丢失","kind":"auto","checklist":"","status":"PASS","actual":"code=ILLEGAL_SLOT；格位=0（预期0）；道具数=1"},{"id":"C01","group":"C 状态与迁移","title":"未获得 → 持有（拾取）","method":"状态迁移·合法","priority":"P0","pre":"道具处于「未获得」状态；地面有 1 个合法掉落","steps":"1. 执行拾取　2. 查状态迁移流水","expect":"合法迁移「未获得→持有」；流水记录完整；道具状态为持有","kind":"auto","checklist":"","status":"PASS","actual":"迁移=未获得→持有；当前状态=持有"},{"id":"C02","group":"C 状态与迁移","title":"持有 → 使用中（使用）","method":"状态迁移·合法","priority":"P0","pre":"道具处于「持有」状态","steps":"1. 点击使用　2. 查状态迁移流水","expect":"合法迁移含「持有→使用中」；服务端有使用记录","kind":"auto","checklist":"","status":"PASS","actual":"迁移=持有→使用中→已消耗"},{"id":"C03","group":"C 状态与迁移","title":"使用中 → 已消耗","method":"状态迁移·合法","priority":"P0","pre":"道具已进入「使用中」状态","steps":"1. 等待结算完成　2. 查最终状态与流水","expect":"合法迁移「使用中→已消耗」；道具移除；效果只结算 1 次","kind":"auto","checklist":"","status":"PASS","actual":"迁移=持有→使用中→已消耗；最终状态=已消耗；效果=1次"},{"id":"C04","group":"C 状态与迁移","title":"持有 → 已过期（限时到期）","method":"状态迁移·合法","priority":"P1","pre":"持有限时道具 I1003，5 分钟后到期；服务器时间可控","steps":"1. 推进服务器时间至到期时刻之后　2. 观察道具状态","expect":"合法迁移「持有→已过期」；状态标记为已过期；倒计时归零不为负","kind":"auto","checklist":"","status":"PASS","actual":"状态=已过期；倒计时=0ms"},{"id":"C05","group":"C 状态与迁移","title":"持有 → 已锁定","method":"状态迁移·合法","priority":"P1","pre":"道具处于「持有」状态","steps":"1. 点击锁定　2. 查状态","expect":"合法迁移「持有→已锁定」；格位保持不变","kind":"auto","checklist":"","status":"PASS","actual":"code=LOCKED；状态=已锁定；格位=0"},{"id":"C06","group":"C 状态与迁移","title":"已锁定 → 持有（解锁）","method":"状态迁移·合法","priority":"P1","pre":"道具处于「已锁定」状态","steps":"1. 点击解锁　2. 查状态","expect":"合法迁移「已锁定→持有」；数量与格位不变","kind":"auto","checklist":"","status":"PASS","actual":"code=UNLOCKED；状态=持有；数量=1"},{"id":"C07","group":"C 状态与迁移","title":"已消耗 → 持有（非法回退）","method":"状态迁移·非法","priority":"P0","pre":"服务端存在状态为「已消耗」的道具（伪造数据/旧存档）","steps":"1. 直接对该道具发起使用　2. 观察服务端校验","expect":"非法迁移被拒绝；状态不得回退到「持有」；不产生效果与消耗记录","kind":"auto","checklist":"","status":"PASS","actual":"code=ILLEGAL_STATE；状态=已消耗；效果=0次"},{"id":"C08","group":"C 状态与迁移","title":"已过期 → 使用中（非法使用）","method":"状态迁移·非法","priority":"P0","pre":"持有限时道具；停留在背包界面未刷新；服务器时间已越过过期时刻","steps":"1. 不重进游戏、不刷新界面　2. 直接点击使用　3. 查服务端校验","expect":"服务端拒绝；提示已过期；不产生效果；道具被标记或清理为已过期","kind":"auto","checklist":"","status":"FAIL","actual":"界面显示状态=持有；使用响应=USED；效果=1次；服务端状态=已消耗"},{"id":"C09","group":"C 状态与迁移","title":"已锁定 → 已消耗（非法使用）","method":"状态迁移·非法","priority":"P0","pre":"道具处于「已锁定」状态；客户端按钮未置灰","steps":"1. 直接对该道具发起使用　2. 观察服务端校验","expect":"非法迁移「已锁定→已消耗」被拒绝；道具仍为已锁定；不产生效果","kind":"auto","checklist":"","status":"PASS","actual":"code=LOCKED；状态=已锁定；效果=0次"},{"id":"C10","group":"C 状态与迁移","title":"跨天 00:00:00 限时道具到期","method":"边界值·时间","priority":"P0","pre":"限时道具在当日 23:59:59 后（次日 00:00:00）到期；服务器时间可控","steps":"1. 23:59:59 查看倒计时　2. 推进到 00:00:00　3. 观察状态与倒计时","expect":"00:00:00 准时失效；倒计时不出现 -1 秒或 00:00:00 仍可使用；状态为已过期","kind":"auto","checklist":"","status":"FAIL","actual":"23:59:59倒计时=1000ms；00:00:00倒计时=0ms；状态=已消耗；使用=USED"},{"id":"C11","group":"C 状态与迁移","title":"23:59:59 使用限时道具","method":"边界值·时间","priority":"P1","pre":"限时道具将在 00:00:00 到期；当前服务器时间 23:59:59","steps":"1. 在 23:59:59 点击使用　2. 观察结果","expect":"未到期应允许使用；效果结算 1 次；道具消耗；不出现提前失效","kind":"auto","checklist":"","status":"PASS","actual":"23:59:59使用=USED；效果=1次；状态=已消耗"},{"id":"C12","group":"C 状态与迁移","title":"服务器时间与本地时间不一致","method":"边界值","priority":"P0","pre":"服务器时间与本地时间不一致（玩家把本地时间往回调 1 小时）；限时道具已按服务器时间过期","steps":"1. 修改客户端本地时间　2. 不刷新界面直接点击使用　3. 观察判定依据","expect":"以服务器时间为唯一判据；使用被拒绝；客户端改时间不能绕过有效期","kind":"auto","checklist":"","status":"FAIL","actual":"客户端时间判定为已过期=false；服务端响应=USED；效果=1次"},{"id":"C13","group":"C 状态与迁移","title":"切后台 5 分钟后返回","method":"场景法","priority":"P1","pre":"持有限时道具；可切后台 5 分钟后返回","steps":"1. 切后台　2. 等待 5 分钟　3. 返回游戏并刷新界面","expect":"返回后界面状态与服务器一致（已过期）；倒计时不出现负数；使用被拒绝","kind":"auto","checklist":"","status":"FAIL","actual":"返回后界面状态=已过期；倒计时=nullms；使用=USED"},{"id":"C14","group":"C 状态与迁移","title":"断线重连后道具状态一致","method":"场景法","priority":"P0","pre":"道具数据已发生变更；可模拟断线重连","steps":"1. 使用 1 个道具　2. 断线　3. 重连后读取服务端状态","expect":"重连后以服务端为准；客户端与服务端数量、状态、效果次数完全一致","kind":"auto","checklist":"","status":"PASS","actual":"客户端数量=2，服务端数量=2；状态=持有/持有；格数一致=true"},{"id":"C15","group":"C 状态与迁移","title":"多端同时登录操作同一道具","method":"场景法","priority":"P0","pre":"同一账号在设备 A 与 B 同时在线；持有 I1001×5","steps":"1. 两端几乎同时使用同一道具　2. 查两端显示与服务端记录","expect":"仅一次生效；另一端收到状态刷新；道具只扣 1 个；不出现重复效果或负数","kind":"auto","checklist":"","status":"PASS","actual":"成功请求=1/2；响应=USED/IN_FLIGHT；效果=1次；剩余=4"},{"id":"C16","group":"C 状态与迁移","title":"重进游戏后状态恢复","method":"场景法","priority":"P0","pre":"背包中有普通道具与锁定道具；已产生使用流水","steps":"1. 记录状态　2. 重进游戏　3. 逐项比对","expect":"道具 ID、数量、状态、格位与效果次数全部恢复且以服务端为准","kind":"auto","checklist":"","status":"PASS","actual":"重进前=U00001:1:已锁定:0|U00002:2:持有:1；重进后=U00001:1:已锁定:0|U00002:2:持有:1；效果次数=1"},{"id":"D01","group":"D 判定表：整理规则","title":"有空格 + 无可堆叠 + 无锁定","method":"判定表 R1","priority":"P2","pre":"容量 8；有空格；无可堆叠道具；无锁定道具","steps":"1. 点击「整理」　2. 观察规则命中与排列结果","expect":"命中 R1：按默认顺序紧凑排列；合并数 0；道具总数不变","kind":"auto","checklist":"","status":"PASS","actual":"规则=R1；合并=0；道具格数=4→4"},{"id":"D02","group":"D 判定表：整理规则","title":"有空格 + 无可堆叠 + 有锁定","method":"判定表 R2","priority":"P1","pre":"容量 8；有空格；无可堆叠道具；有锁定道具","steps":"1. 记录锁定道具格位　2. 点击整理　3. 核对格位","expect":"命中 R2：排列但锁定格位保留；锁定道具位置不变","kind":"auto","checklist":"","status":"FAIL","actual":"规则=R2；锁定格位=3→4；锁定移动数=1"},{"id":"D03","group":"D 判定表：整理规则","title":"有空格 + 有可堆叠 + 无锁定","method":"判定表 R3","priority":"P1","pre":"容量 8；有空格；有两堆可合并同类道具；无锁定道具","steps":"1. 点击整理　2. 核对合并结果","expect":"命中 R3：先合并同类再紧凑排列；合并数量 > 0；总数守恒","kind":"auto","checklist":"","status":"PASS","actual":"规则=R3；合并=3个；I1001总数=6→6"},{"id":"D04","group":"D 判定表：整理规则","title":"有空格 + 有可堆叠 + 有锁定","method":"判定表 R4","priority":"P0","pre":"容量 8；有空格；有两堆可合并同类道具；有 1 个锁定道具","steps":"1. 记录全部道具 ID、数量与锁定状态　2. 点击整理　3. 等待动画结束并核对","expect":"命中 R4：同类正确合并；锁定道具不参与合并与移动、位置不变；整理前后道具 ID 与总数量完全一致","kind":"auto","checklist":"","status":"FAIL","actual":"规则=R4；合并=3；锁定格位=3→5；锁定数量=1→1；ID种类集合[I1001,I1009]一致=true；总数量=8→8"},{"id":"D05","group":"D 判定表：整理规则","title":"无空格 + 无可堆叠 + 无锁定","method":"判定表 R5","priority":"P2","pre":"容量 8；无空格；无可堆叠道具；无锁定道具","steps":"1. 点击整理　2. 观察按钮状态与响应","expect":"命中 R5：无可整理内容，提示或按钮置灰；数据完全不变","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R5；数据未变=true"},{"id":"D06","group":"D 判定表：整理规则","title":"无空格 + 无可堆叠 + 有锁定","method":"判定表 R6","priority":"P1","pre":"容量 8；无空格；无可堆叠道具；有锁定道具","steps":"1. 记录锁定格位　2. 点击整理　3. 核对","expect":"命中 R6：无可整理内容；锁定道具保持原位；数据完全不变","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R6；锁定格位=7；数据未变=true"},{"id":"D07","group":"D 判定表：整理规则","title":"无空格 + 有可堆叠 + 无锁定","method":"判定表 R7","priority":"P1","pre":"容量 8；无空格；有两堆可合并同类道具；无锁定道具","steps":"1. 点击整理　2. 核对合并后空格数","expect":"命中 R7：仅执行合并；合并后腾出空格；总数量守恒","kind":"auto","checklist":"","status":"PASS","actual":"规则=R7；合并=3；格数=8→7（腾出空格）；总数量=12→12"},{"id":"D08","group":"D 判定表：整理规则","title":"无空格 + 有可堆叠 + 有锁定","method":"判定表 R8","priority":"P0","pre":"容量 8；无空格；有两堆可合并同类道具；有 1 个锁定道具","steps":"1. 记录锁定道具状态　2. 点击整理　3. 核对","expect":"命中 R8：只合并非锁定道具；锁定道具不参与合并且位置不变；总数守恒","kind":"auto","checklist":"","status":"FAIL","actual":"规则=R8；合并=3；锁定格位=7→1；总数量=12→12"},{"id":"D09","group":"D 判定表：整理规则","title":"全部为锁定道具时整理","method":"判定表·边界","priority":"P1","pre":"容量 4；4 个道具全部为已锁定状态","steps":"1. 记录所有格位　2. 点击整理　3. 核对","expect":"全部锁定时不产生任何移动；格位逐一不变；不报错不崩溃","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R6；格位未变=true"},{"id":"D10","group":"D 判定表：整理规则","title":"全部为堆叠已满道具时整理","method":"判定表·边界","priority":"P1","pre":"容量 4；4 堆同类道具均已达到堆叠上限 99","steps":"1. 点击整理　2. 观察是否误判为可合并","expect":"全部满堆时不存在可合并内容；不得产生 0 数量空堆或数量溢出；数据不变","kind":"auto","checklist":"","status":"PASS","actual":"code=NO_SORTABLE；规则=R5；堆数=4；无异常堆=true"},{"id":"D11","group":"D 判定表：整理规则","title":"整理过程中断网","method":"场景法","priority":"P0","pre":"存在可整理内容；可在点击整理瞬间断网","steps":"1. 断网后点击整理　2. 恢复网络重连　3. 核对整理结果与总数","expect":"断网期间服务端数据不变；重连重放后状态一致；不出现重复整理导致的数据错乱或丢失","kind":"auto","checklist":"","status":"PASS","actual":"断网响应=OFFLINE；断网期间总数未变=true；重连后总数=8→8"},{"id":"D12","group":"D 判定表：整理规则","title":"整理前后道具总数与 ID 不变","method":"场景法·校验","priority":"P0","pre":"含普通、可堆叠、锁定三类道具；整理前已记录基线","steps":"1. 记录整理前各 itemId 总数量、ID 集合与锁定状态　2. 执行整理　3. 逐项比对","expect":"整理前后各 itemId 总数量不变、ID 集合不变、锁定状态与格位不变；验证「数据不变」而非「看起来整齐」","kind":"auto","checklist":"","status":"FAIL","actual":"数量映射={\"I1001\":6,\"I1009\":2}→{\"I1001\":6,\"I1009\":2}；ID集合一致=true；锁定格位一致=false"},{"id":"E01","group":"E 场景法：完整链路","title":"基本流：拾取→查看→使用→消耗","method":"场景法·基本流","priority":"P0","pre":"账号已登录；副本可产生掉落；背包有空格","steps":"1. 击杀怪物产生掉落　2. 拾取　3. 打开背包查看　4. 使用　5. 确认消耗","expect":"基本流走通：流水依次含 pickup 与 use；ID 与数量正确；效果结算 1 次；道具最终移除","kind":"auto","checklist":"","status":"PASS","actual":"流水=pickup→use；效果=1次；背包=0格"},{"id":"E02","group":"E 场景法：完整链路","title":"拾取→丢弃→找回","method":"场景法·备选流","priority":"P2","pre":"地面有 1 个掉落；支持丢弃找回","steps":"1. 拾取　2. 丢弃并确认　3. 通过回收入口找回","expect":"备选流走通：找回后道具重新入包；数量与 ID 与最初一致；不重复发放","kind":"auto","checklist":"","status":"PASS","actual":"找回=RECOVERED；I1001数量=1；背包=1格"},{"id":"E03","group":"E 场景法：完整链路","title":"拾取→锁定→批量整理","method":"场景法","priority":"P1","pre":"地面有 3 个掉落；支持锁定与整理","steps":"1. 全部拾取　2. 锁定其中 1 个　3. 执行整理　4. 核对","expect":"锁定道具不参与整理移动；总数量与 ID 不变；整理结果符合判定表规则","kind":"auto","checklist":"","status":"FAIL","actual":"整理=SORTED（R2）；锁定格位=0→199；I1001总数=30→30"},{"id":"E04","group":"E 场景法：完整链路","title":"商城购买→背包已满→邮件补发","method":"场景法","priority":"P0","pre":"背包 200 格满；金币 1000；商城有货","steps":"1. 商城购买 I1002×1　2. 支付　3. 查看背包与邮件","expect":"扣款成功后因满包自动邮件补发；玩家可领取；全程有明确提示；道具不丢失","kind":"auto","checklist":"","status":"FAIL","actual":"金币=1000→980；邮件=0封（-）；静默丢失=true"},{"id":"E05","group":"E 场景法：完整链路","title":"副本掉落→自动拾取→满包提示","method":"场景法","priority":"P1","pre":"背包 200 格满；副本可产生掉落并自动拾取","steps":"1. 击杀怪物产生掉落　2. 触发自动拾取　3. 观察提示与地面","expect":"给出「背包已满」明确提示；掉落物保留在地面；背包仍 200 格；不吞道具","kind":"auto","checklist":"","status":"FAIL","actual":"code=BAG_FULL；提示=\"背包已满，掉落物保留在地面\"；地面=0个；背包=200格"},{"id":"E06","group":"E 场景法：完整链路","title":"交易接收→到账→状态刷新","method":"场景法","priority":"P0","pre":"账号在线；交易对方发起交付 I1002×1；背包有空格","steps":"1. 接收交易　2. 查看到账　3. 检查客户端状态刷新","expect":"道具到账；数量与 ID 正确；客户端视图与服务端一致；无延迟显示","kind":"auto","checklist":"","status":"PASS","actual":"code=GRANTED；服务端数量=1；客户端显示=1"},{"id":"E07","group":"E 场景法：完整链路","title":"使用过程中断网","method":"场景法·异常","priority":"P0","pre":"持有 I1001×2；可在点击使用瞬间断网","steps":"1. 断网后点击使用　2. 恢复网络并等待重连　3. 核对数量与效果","expect":"一致性约束：重连后要么成功扣 1 且结算 1 次，要么完全不扣不结算；不得「扣了但没效果」","kind":"auto","checklist":"","status":"PASS","actual":"断网响应=OFFLINE；断网前数量=2、效果=0；重连后数量=1、效果=1；一致性=true"},{"id":"E08","group":"E 场景法：完整链路","title":"使用过程中杀进程","method":"场景法·异常","priority":"P0","pre":"持有 I1001×2；已点击使用并获得成功响应；可强杀进程","steps":"1. 使用道具　2. 响应到达后立即杀进程　3. 重进游戏","expect":"以服务端权威数据为准：道具扣 1、效果结算 1 次；重进后不回档、不重复扣","kind":"auto","checklist":"","status":"PASS","actual":"服务端数量=1；效果=1次；重进后客户端数量=1"},{"id":"E09","group":"E 场景法：完整链路","title":"使用回调重复推送","method":"场景法·幂等","priority":"P0","pre":"持有 I1001×5；可在测试环境重放同一条使用成功响应 3 次","steps":"1. 使用 1 个道具并捕获 opId　2. 将同一响应重复推送 3 次　3. 查数量与效果流水","expect":"效果只结算一次；道具只扣 1 个；服务端有幂等去重；不产生重复副作用","kind":"auto","checklist":"","status":"FAIL","actual":"响应=USED/USED/USED；效果=3次；剩余=2；使用流水=3条"},{"id":"E10","group":"E 场景法：完整链路","title":"弱网下重复点击使用","method":"场景法","priority":"P0","pre":"持有 I1001×5；弱网 300ms 延迟 10% 丢包；按钮可重复点击","steps":"1. 在 200ms 内连续点击使用两次　2. 等待两个响应都返回","expect":"两次点击合并为一次有效操作；只扣 1 个道具、只结算 1 次效果；不出现「扣 2 结算 1」","kind":"auto","checklist":"","status":"PASS","actual":"响应=USED/IN_FLIGHT；效果=1次；剩余=4"},{"id":"E11","group":"E 场景法：完整链路","title":"后台推送道具时前台无刷新","method":"场景法","priority":"P1","pre":"玩家停留在背包界面；服务端后台推送 1 个道具","steps":"1. 后台推送道具（不主动通知前端）　2. 观察前台显示　3. 手动刷新界面","expect":"推送已写入服务端；前台在无刷新时可暂时落后；刷新后立即与服务端一致；不出现静默吞掉","kind":"auto","checklist":"","status":"PASS","actual":"推送=GRANTED；服务端=1格、前台=0格（落后1）；刷新后一致=true"},{"id":"E12","group":"E 场景法：完整链路","title":"热更新后背包数据兼容","method":"场景法","priority":"P0","pre":"存在热更新前产生的背包存档；准备 v2.4.2 新配置（新增 season / schema 字段）","steps":"1. 用旧版本产生背包数据　2. 热更新到新版本　3. 打开背包并使用道具","expect":"旧道具可正常显示与使用；新增字段有默认值；不出现解析失败、闪退或道具丢失","kind":"auto","checklist":"","status":"PASS","actual":"热更新=HOT_UPDATED；补字段=2个；版本=2.4.2；使用=USED"},{"id":"E13","group":"E 场景法：完整链路","title":"老版本存档在新版本打开","method":"场景法","priority":"P0","pre":"存在 v2.4.1 老版本存档（缺 slot / season / schema 字段）","steps":"1. 用新版本客户端打开老存档　2. 检查字段与显示　3. 使用道具","expect":"兼容加载不报错；缺失字段有默认值；道具数量正确；可正常使用","kind":"auto","checklist":"","status":"PASS","actual":"加载=LEGACY_LOADED；补齐 slot=0、schema=1、uses=1；使用=USED；剩余=1"},{"id":"E14","group":"E 场景法：完整链路","title":"跨服转区后道具保留","method":"场景法","priority":"P0","pre":"账号在 S1 服持有 3 个道具；可执行跨服转区","steps":"1. 记录道具 uid 与数量　2. 转区到 S2　3. 打开背包核对","expect":"道具全部保留；uid、数量、状态不变；不出现重复发放或丢失","kind":"auto","checklist":"","status":"PASS","actual":"转区=TRANSFERRED；目标服=S2；数据一致=true"},{"id":"E15","group":"E 场景法：完整链路","title":"账号封禁期间道具到期","method":"场景法","priority":"P2","pre":"账号处于封禁状态；持有限时道具即将到期","steps":"1. 封禁期间推进服务器时间越过到期时刻　2. 解封　3. 查道具状态","expect":"到期判定仍以服务器时间为准；解封后道具不会「复活」；不因封禁产生额外补偿","kind":"auto","checklist":"","status":"PASS","actual":"解封后状态=已过期；倒计时=0ms；封禁标记=false"},{"id":"E16","group":"E 场景法：完整链路","title":"服务器回档后道具状态","method":"场景法","priority":"P0","pre":"已取得服务器快照；快照后发生过使用消耗","steps":"1. 记录快照　2. 使用道具　3. 执行服务器回档　4. 核对状态","expect":"回档后道具数量、状态与效果计数以快照为准；不出现「状态回退但流水未回退」的不一致","kind":"auto","checklist":"","status":"PASS","actual":"回档前数量=2、效果=1；回档后数量=3、效果=0"},{"id":"F01","group":"F 兼容、性能与界面","title":"小屏幕分辨率下背包布局","method":"兼容性","priority":"P2","pre":"720×1280 小屏分辨率；背包内有至少 20 个道具","steps":"1. 打开背包　2. 滑到最右一列　3. 观察图标显示","expect":"最后一列图标完整显示、可正常点击；布局算法计算的内容宽度不超过视口宽度","kind":"proxy","checklist":"","status":"FAIL","actual":"视口=720px；列数=16；内容宽=724px；溢出=4px；末列裁切=true"},{"id":"F02","group":"F 兼容、性能与界面","title":"平板横竖屏切换","method":"兼容性","priority":"P2","pre":"平板设备；分别处于横屏 1024px 与竖屏 768px","steps":"1. 横屏打开背包　2. 切换竖屏　3. 分别检查布局","expect":"两种方向下列数自适应且均无横向溢出；切换后道具可点击","kind":"proxy","checklist":"","status":"PASS","actual":"横屏=22列/溢出0px；竖屏=17列/溢出0px"},{"id":"F03","group":"F 兼容、性能与界面","title":"折叠屏展开与折叠","method":"兼容性","priority":"P2","pre":"折叠屏设备；折叠态 600px 与展开态 1100px","steps":"1. 折叠态打开背包　2. 展开屏幕　3. 分别检查布局","expect":"展开/折叠均不裁切；列数随宽度增加；无布局残留","kind":"proxy","checklist":"","status":"FAIL","actual":"折叠=14列/溢出36px；展开=24列/溢出0px"},{"id":"F04","group":"F 兼容、性能与界面","title":"低端机打开 200 格背包耗时","method":"性能","priority":"P1","pre":"中低端机型基准；背包内有 200 个道具；已接入耗时采集","steps":"1. 记录开始时间　2. 打开 200 格背包　3. 记录结束时间","expect":"同步构建 200 格视图数据的耗时低于宽松阈值 500ms（代理指标，不替代真机帧耗时）","kind":"proxy","checklist":"","status":"PASS","actual":"打开耗时=1ms（阈值<500ms）；视图格数=200"},{"id":"F05","group":"F 兼容、性能与界面","title":"连续开关背包 50 次内存增长","method":"性能","priority":"P1","pre":"中端机型；已接入对象计数；背包内有 150 个道具","steps":"1. 记录初始监听器与缓存对象数　2. 连续开关背包 50 次　3. 等待 GC 后复查","expect":"监听器与缓存对象数回到基线（无累积增长）；不出现 OOM（代理指标，非真实内存采样）","kind":"proxy","checklist":"","status":"PASS","actual":"50次开关后监听器=0（基线0）；缓存对象=0（基线0）"},{"id":"F06","group":"F 兼容、性能与界面","title":"背包快速滚动帧率","method":"性能","priority":"P2","pre":"中端机型；背包 200 格；已接入帧率采集工具","steps":"1. 打开背包　2. 快速连续滚动列表　3. 采集帧率曲线","expect":"滚动过程无持续掉帧，最低帧率与项目标准对齐；无卡顿白块","kind":"manual","checklist":"真机验证项：需在目标机型上采集 FPS 曲线与 GPU 耗时，记录最低帧率、掉帧次数与阈值；纯逻辑场景无法模拟刷新率与合成器行为。","status":"MANUAL","actual":"需真机/人工判定：真机验证项：需在目标机型上采集 FPS 曲线与 GPU 耗时，记录最低帧率、掉帧次数与阈值；纯逻辑场景无法模拟刷新率与合成器行为。"},{"id":"F07","group":"F 兼容、性能与界面","title":"道具图标加载失败的占位","method":"功能","priority":"P2","pre":"道具图标资源 URL 缺失或加载失败","steps":"1. 打开背包　2. 观察该道具格位","expect":"显示内置占位图；格位仍可点击；不出现空白格或崩溃","kind":"auto","checklist":"","status":"PASS","actual":"占位图启用=true；资源=builtin://icon_missing"},{"id":"F08","group":"F 兼容、性能与界面","title":"道具名称超长时的显示","method":"边界值","priority":"P2","pre":"存在名称长度 30 字符的道具；名称显示上限 12 字符","steps":"1. 在背包列表查看名称　2. 检查截断与省略号","expect":"按字符安全截断并带省略号；不撑破布局；不截断出半个代理对","kind":"auto","checklist":"","status":"PASS","actual":"原长=38字符；截断后=13字符；结果=\"超长道具名称测试用字符串…\""},{"id":"F09","group":"F 兼容、性能与界面","title":"道具名称含特殊字符","method":"等价类·无效","priority":"P1","pre":"具备自定义道具名称能力；输入含 % 、单引号、分号、尖括号与 emoji 的名称","steps":"1. 保存名称　2. 在背包、交易行、排行榜三处查看　3. 检查脚本注入","expect":"正确保存并原样显示；不引发脚本执行；三处显示一致；尖括号被实体转义","kind":"auto","checklist":"","status":"PASS","actual":"三处一致=true；含可执行<script>=false；转义后片段=药%水&#39;;&lt;script&gt;alert(1"},{"id":"F10","group":"F 兼容、性能与界面","title":"多语言下名称截断","method":"本地化","priority":"P2","pre":"多语言环境；名称含中文、英文、emoji 混合字符","steps":"1. 设置不同语言　2. 查看截断后的名称","expect":"按 Unicode 码点截断；emoji 不被切成两半；不出现乱码方块","kind":"auto","checklist":"","status":"PASS","actual":"截断结果=\"中文Name混合…\"；码点数=9；替换字符=false"},{"id":"F11","group":"F 兼容、性能与界面","title":"数量超过显示上限（999999+）","method":"边界值","priority":"P1","pre":"道具数量超过显示上限 999999","steps":"1. 查看数量角标格式化结果","expect":"显示为「999999+」；不出现数值溢出或科学计数法；实际数量仍以服务端整数为准","kind":"auto","checklist":"","status":"PASS","actual":"formatQty(1000000)=\"999999+\""},{"id":"F12","group":"F 兼容、性能与界面","title":"数量为 0 时不显示角标","method":"边界值","priority":"P2","pre":"道具数量为 0（异常数据或边界）","steps":"1. 查看数量角标","expect":"数量为 0 时不显示角标；不出现「0」字样；不出现负数","kind":"auto","checklist":"","status":"PASS","actual":"formatQty(0)=\"\"（空字符串即不渲染角标）"},{"id":"F13","group":"F 兼容、性能与界面","title":"使用时的音效与震动反馈","method":"UI","priority":"P3","pre":"设备音量与震动权限正常；背包中有可用消耗品","steps":"1. 使用道具　2. 听音效与感受震动　3. 在静音模式下重复","expect":"音效与震动按设置触发；静音模式下不误触发；无延迟与重复播放","kind":"manual","checklist":"真机验证项：需人工听感与触觉确认，并覆盖静音/勿扰/无障碍设置组合；纯逻辑场景无音频与马达接口。","status":"MANUAL","actual":"需真机/人工判定：真机验证项：需人工听感与触觉确认，并覆盖静音/勿扰/无障碍设置组合；纯逻辑场景无音频与马达接口。"},{"id":"F14","group":"F 兼容、性能与界面","title":"新手引导期间背包入口","method":"场景法","priority":"P2","pre":"账号处于新手引导阶段；背包入口存在","steps":"1. 引导期间尝试进入背包　2. 引导结束后再次进入","expect":"引导期间按需求锁定或给出提示；引导结束后入口恢复可用；不出现卡死","kind":"auto","checklist":"","status":"PASS","actual":"引导中锁定=true（原因\"新手引导期间入口按需求锁定\"）；引导后可进入=true"},{"id":"F15","group":"F 兼容、性能与界面","title":"无障碍与大字体模式","method":"兼容性","priority":"P3","pre":"开启系统大字体（fontScale=1.5）与无障碍模式；视口 720px","steps":"1. 开启大字体　2. 打开背包　3. 检查图标与文字可读性","expect":"布局单元随字级放大后仍不横向溢出；文字不被裁切（代理指标，真实可读性需人工确认）","kind":"proxy","checklist":"","status":"FAIL","actual":"字级=1.5；单元=60px；列数=11；溢出=4px"},{"id":"F16","group":"F 兼容、性能与界面","title":"深色模式下图标对比度","method":"兼容性","priority":"P3","pre":"深色模式；前景 #E8EAF0，背景 #1A1D24","steps":"1. 切换深色模式　2. 计算图标与背景的对比度","expect":"WCAG 对比度 ≥ 4.5:1；低对比度图标需有描边或替代色（计算值，非屏幕实测亮度）","kind":"proxy","checklist":"","status":"PASS","actual":"对比度=14.02:1（阈值≥4.5）"}]},"reverseTest":{"pass":true,"checks":[{"fault":"swallowDrop","expected":["A04"],"caught":["A04","A05","E05"],"pass":true,"note":"缺陷被 A04 捕获，共 3 条用例失败"},{"fault":"noExpireCheck","expected":["C08"],"caught":["C08","C10","C12","C13"],"pass":true,"note":"缺陷被 C08 捕获，共 4 条用例失败"},{"fault":"noIdempotency","expected":["E09"],"caught":["E09"],"pass":true,"note":"缺陷被 E09 捕获，共 1 条用例失败"},{"fault":"sortMovesLocked","expected":["D04"],"caught":["D02","D04","D08","D12","E03"],"pass":true,"note":"缺陷被 D04 捕获，共 5 条用例失败"},{"fault":"purchaseLosesItem","expected":["A07","E04"],"caught":["A07","E04"],"pass":true,"note":"缺陷被 A07/E04 捕获，共 2 条用例失败"},{"fault":"badLayout","expected":["F01"],"caught":["F01","F03","F15"],"pass":true,"note":"缺陷被 F01 捕获，共 3 条用例失败"}]},"acceptance":{"metaMatchesDoc":true,"noMissingImpl":true,"baselineNoFail":true,"reverseEffective":true,"injectedDetected":true}};</script>
+<script>/* ==== engine.js ==== */
+/* 背包系统游戏场景引擎（被测对象 SUT）
+ * 结构：服务端权威数据 srv + 客户端投影 cli + 地面掉落 ground
+ * Node 与浏览器共用本文件，保证交互场景与自动化验证对象是同一份实现。
+ * 规则取自源学习包：容量 200 / 堆叠上限 99 / 六态道具 / 整理判定表 R1-R8。
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.BagNS = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var STATES = ['未获得', '持有', '使用中', '已消耗', '已锁定', '已过期'];
+  var T0 = Date.UTC(2026, 10, 9, 8, 0, 0); // 固定基准时间，保证验证可复现
+
+  var ITEM_DB = {
+    I1001: { name: '小型治疗药水', stack: 99, price: 10, uses: 1, level: 1, job: null, bound: false, tradeable: true },
+    I1002: { name: '初级强化石', stack: 99, price: 20, uses: 1, level: 1, job: null, bound: false, tradeable: true },
+    I1003: { name: '限时双倍经验卡', stack: 1, price: 50, uses: 1, level: 1, job: null, bound: false, tradeable: true, durationMs: 300000 },
+    I1004: { name: '战士专属徽章', stack: 1, price: 100, uses: 1, level: 10, job: '战士', bound: false, tradeable: true },
+    I1005: { name: '绑定·新手礼包', stack: 1, price: 0, uses: 1, level: 1, job: null, bound: true, tradeable: false },
+    I1006: { name: '三次数卷轴', stack: 1, price: 80, uses: 3, level: 1, job: null, bound: false, tradeable: true },
+    I1007: { name: '冷却型药剂', stack: 99, price: 15, uses: 1, level: 1, job: null, bound: false, tradeable: true, cooldownMs: 30000 },
+    I1008: { name: '已下架道具', stack: 1, price: 5, uses: 1, level: 1, job: null, bound: false, tradeable: false, deprecated: true },
+    I1009: { name: '不可堆叠宝箱', stack: 1, price: 30, uses: 1, level: 1, job: null, bound: false, tradeable: true }
+  };
+
+  var FAULT_KEYS = [
+    'swallowDrop',        // 满包拾取时先删地面掉落物（吞道具）
+    'noExpireCheck',      // 服务端不校验过期（界面未刷新仍可使用）
+    'noIdempotency',      // 使用接口无幂等键（重复回调 / 双击重复结算）
+    'sortMovesLocked',    // 整理移动锁定道具
+    'purchaseLosesItem',  // 满包商城购买扣款成功但未到账且无补发
+    'badLayout'           // 小屏分辨率下最后一列溢出裁切
+  ];
+
+  function ok(code, msg, data) { return { ok: true, code: code, msg: msg || '', data: data || {} }; }
+  function fail(code, msg, data) { return { ok: false, code: code, msg: msg || '', data: data || {} }; }
+  function copy(o) { return JSON.parse(JSON.stringify(o)); }
+  function sum(arr, f) { return arr.reduce(function (a, b) { return a + f(b); }, 0); }
+
+  function BagEngine(opts) {
+    opts = opts || {};
+    this.faults = {};
+    for (var i = 0; i < FAULT_KEYS.length; i++) this.faults[FAULT_KEYS[i]] = !!opts.faults && !!opts.faults[FAULT_KEYS[i]];
+    this.DEF = { capacity: 200, stackLimit: 99, goldCap: 999999999, level: opts.level || 60, job: opts.job || '战士' };
+    this._uid = 0;
+    this._dropId = 0;
+    this._batch = false;
+    this._inflight = {};
+    this.accounts = {};
+    this.groundByAccount = {};
+    this.account = 'test_bag_01';
+    this.srv = this._newServer(opts.capacity || 200);
+    this.accounts[this.account] = this.srv;
+    this.cli = { view: [], open: false, listeners: 0, cacheSize: 0, localTimeOffset: 0, session: 'A' };
+    this.ground = [];
+    this.eventLog = [];
+    this.refresh();
+  }
+
+  BagEngine.prototype._newServer = function (capacity) {
+    return {
+      capacity: capacity, items: [], gold: 1000, time: T0, mail: [], recycle: [],
+      processed: {}, ledger: [], effects: 0, cooldowns: {}, lastSold: null,
+      version: '2.4.1', schema: 2, serverId: 'S1', banned: false, pending: []
+    };
+  };
+
+  BagEngine.prototype._log = function (text) {
+    this.eventLog.push({ t: this.srv.time, text: text });
+    if (this.eventLog.length > 400) this.eventLog.shift();
+  };
+
+  BagEngine.prototype.nextUid = function () { this._uid += 1; return 'U' + String(this._uid).padStart(5, '0'); };
+  BagEngine.prototype.nextOpId = function () { return 'OP' + (this._uid + 1) + '-' + Math.floor(this.srv.ledger.length) + '-' + Math.random().toString(36).slice(2, 7); };
+
+  function mkItem(engine, itemId, qty, extra) {
+    var def = ITEM_DB[itemId];
+    var it = {
+      uid: engine.nextUid(), itemId: itemId, qty: qty, state: '持有',
+      slot: engine.srv.items.length, uses: def.uses,
+      expireAt: def.durationMs ? engine.srv.time + def.durationMs : null,
+      lockedAt: null, season: 'S0', schema: engine.srv.schema
+    };
+    if (extra) for (var k in extra) it[k] = extra[k];
+    return it;
+  }
+
+  /* ---------- 客户端投影 ---------- */
+  BagEngine.prototype.refresh = function () {
+    this.cli.view = copy(this.srv.items);
+    return ok('REFRESHED', '客户端已按服务端数据刷新');
+  };
+  BagEngine.prototype.getView = function () { return copy(this.cli.view); };
+  BagEngine.prototype.getState = function () {
+    return {
+      capacity: this.srv.capacity, items: copy(this.cli.view), ground: copy(this.ground),
+      mail: copy(this.srv.mail), gold: this.srv.gold, time: this.srv.time,
+      online: this.netOnline(), account: this.account, session: this.cli.session,
+      version: this.srv.version, effects: this.srv.effects, open: this.cli.open,
+      listeners: this.cli.listeners, faults: copy(this.faults), log: copy(this.eventLog.slice(-12))
+    };
+  };
+
+  /* ---------- 网络 / 会话 ---------- */
+  BagEngine.prototype.netOnline = function () { return this._online === undefined ? true : this._online; };
+  BagEngine.prototype.setOnline = function (v) {
+    this._online = !!v;
+    this._log(this._online ? '网络恢复' : '网络断开');
+    return ok('NET', this._online ? 'online' : 'offline');
+  };
+  BagEngine.prototype._gate = function (op) {
+    if (!this.netOnline()) {
+      this.srv.pending.push(op);
+      return fail('OFFLINE', '请求已进入待重放队列，服务端未做任何变更', { pending: true });
+    }
+    return null;
+  };
+  BagEngine.prototype.reconnect = function () {
+    this._online = true;
+    var pending = this.srv.pending.slice();
+    this.srv.pending = [];
+    var replayed = [];
+    for (var i = 0; i < pending.length; i++) {
+      var p = pending[i];
+      var r = this[p.fn].apply(this, p.args);
+      replayed.push({ fn: p.fn, code: r.code });
+    }
+    this.refresh();
+    this._log('重连完成，重放 ' + replayed.length + ' 个请求（幂等去重）');
+    return ok('RECONNECTED', '重连完成', { replayed: replayed });
+  };
+  BagEngine.prototype.createSession = function (id) { this.cli.session = id || 'B'; return this.cli.session; };
+  BagEngine.prototype.concurrent = function (fns) {
+    this._batch = true;
+    var rs = [];
+    try { for (var i = 0; i < fns.length; i++) rs.push(fns[i]()); }
+    finally { this._batch = false; this._inflight = {}; }
+    return rs;
+  };
+
+  /* ---------- 时间与账号 ---------- */
+  BagEngine.prototype.setServerTime = function (ms) { this.srv.time = ms; return ms; };
+  BagEngine.prototype.advanceTime = function (ms) { this.srv.time += ms; this.expireSweep(); return this.srv.time; };
+  BagEngine.prototype.setLocalTimeOffset = function (ms) { this.cli.localTimeOffset = ms; return ms; };
+  BagEngine.prototype.clientTime = function () { return this.srv.time + this.cli.localTimeOffset; };
+  BagEngine.prototype.isExpired = function (it) { return it.expireAt !== null && this.srv.time >= it.expireAt; };
+  BagEngine.prototype.expireSweep = function () {
+    var n = 0;
+    for (var i = 0; i < this.srv.items.length; i++) {
+      var it = this.srv.items[i];
+      if (it.state === '持有' && this.isExpired(it)) { it.state = '已过期'; n++; }
+    }
+    return n;
+  };
+  BagEngine.prototype.setBan = function (v) { this.srv.banned = !!v; return this.srv.banned; };
+  BagEngine.prototype.switchAccount = function (id) {
+    if (!this.accounts[id]) this.accounts[id] = this._newServer(this.DEF.capacity);
+    this.accounts[this.account] = this.srv;
+    this.groundByAccount[this.account] = this.ground;
+    this.account = id;
+    this.srv = this.accounts[id];
+    this.ground = this.groundByAccount[id] || [];
+    this.cli.view = [];
+    this.cli.session = 'A';
+    this.refresh();
+    this._log('切换账号至 ' + id + '（数据与会话隔离）');
+    return ok('ACCOUNT_SWITCHED', '已切换账号', { account: id });
+  };
+
+  /* ---------- 容量与拾取 ---------- */
+  BagEngine.prototype._findStack = function (itemId) {
+    return this.srv.items.filter(function (it) {
+      return it.itemId === itemId && it.state === '持有' && it.qty < ITEM_DB[itemId].stack;
+    });
+  };
+  BagEngine.prototype._canInsert = function (itemId, qty) {
+    var stack = ITEM_DB[itemId].stack;
+    var room = sum(this._findStack(itemId), function (it) { return stack - it.qty; });
+    var rest = Math.max(0, qty - room);
+    var need = Math.ceil(rest / stack);
+    return { can: this.srv.items.length + need <= this.srv.capacity, need: need, room: room };
+  };
+  BagEngine.prototype._insert = function (itemId, qty, extra) {
+    var chk = this._canInsert(itemId, qty);
+    if (!chk.can) return fail('BAG_FULL', '背包已满', { remain: qty });
+    var left = qty;
+    var stacks = this._findStack(itemId);
+    for (var i = 0; i < stacks.length && left > 0; i++) {
+      var add = Math.min(ITEM_DB[itemId].stack - stacks[i].qty, left);
+      stacks[i].qty += add; left -= add;
+    }
+    while (left > 0) {
+      var take = Math.min(ITEM_DB[itemId].stack, left);
+      var it = mkItem(this, itemId, take, extra);
+      it.slot = this.srv.items.length;
+      this.srv.items.push(it);
+      left -= take;
+    }
+    return ok('INSERTED', '入包成功', { inserted: qty });
+  };
+
+  BagEngine.prototype.spawnDrop = function (itemId, qty, owner) {
+    qty = qty === undefined ? 1 : qty;
+    this._dropId += 1;
+    var d = { dropId: 'D' + this._dropId, itemId: itemId, qty: qty, owner: owner || this.account };
+    this.ground.push(d);
+    this._log('地面出现掉落：' + (ITEM_DB[itemId] ? ITEM_DB[itemId].name : itemId) + ' ×' + qty);
+    return d.dropId;
+  };
+
+  BagEngine.prototype.pickup = function (dropId, opts) {
+    var self = this;
+    opts = opts || {};
+    var opId = opts.opId || (opts.autoOp === false ? this.nextOpId() : this.nextOpId());
+    var gated = this._gate({ fn: 'pickup', args: [dropId, opts] });
+    if (gated) return gated;
+    // 幂等：同一操作键只结算一次
+    if (!(this.faults.noIdempotency && this.srv.processed[opId]) && this.srv.processed[opId]) return this.srv.processed[opId];
+    var idx = -1;
+    for (var i = 0; i < this.ground.length; i++) if (this.ground[i].dropId === dropId) idx = i;
+    if (idx < 0) return fail('DROP_NOT_FOUND', '掉落物不存在');
+    var d = this.ground[idx];
+    var def = ITEM_DB[d.itemId];
+    if (!def || def.deprecated) return fail('INVALID_ITEM_ID', '道具 ID 不存在或已下架，已记日志');
+    if (!(typeof d.qty === 'number') || !isFinite(d.qty) || d.qty <= 0) return fail('INVALID_QTY', '拾取数量必须为正整数');
+    if (d.qty > this.srv.capacity || d.qty > 9999) return fail('QTY_OVER_LIMIT', '单次拾取数量超过容量上限');
+    var chk = this._canInsert(d.itemId, d.qty);
+    if (!chk.can) {
+      if (this.faults.swallowDrop) { this.ground.splice(idx, 1); this._log('缺陷：满包时掉落物被提前删除'); }
+      return fail('BAG_FULL', '背包已满，掉落物保留在地面', { remain: d.qty, groundKept: !this.faults.swallowDrop });
+    }
+    var r = this._insert(d.itemId, d.qty);
+    this.ground.splice(idx, 1);
+    r.data.opId = opId;
+    this.srv.ledger.push({ type: 'pickup', opId: opId, itemId: d.itemId, qty: d.qty, time: this.srv.time, transitions: ['未获得', '持有'] });
+    this._log('拾取成功：' + def.name + ' ×' + d.qty + '（op=' + opId + '）');
+    this.refresh();
+    this.srv.processed[opId] = r;
+    return r;
+  };
+
+  BagEngine.prototype.pickupBatch = function (dropIds, opts) {
+    var results = [];
+    for (var i = 0; i < dropIds.length; i++) results.push({ dropId: dropIds[i], result: this.pickup(dropIds[i], opts || {}) });
+    this.refresh();
+    return ok('BATCH_DONE', '批量拾取结束', {
+      success: results.filter(function (x) { return x.result.ok; }).length,
+      failed: results.filter(function (x) { return !x.result.ok; }).length,
+      results: results
+    });
+  };
+
+  /* ---------- 发放：邮件 / 商城 / 交易 / 后台推送 ---------- */
+  BagEngine.prototype.grant = function (itemId, qty, source, opts) {
+    opts = opts || {};
+    var def = ITEM_DB[itemId];
+    if (!def || def.deprecated) return fail('INVALID_ITEM_ID', '道具 ID 无效');
+    if (!(qty > 0)) return fail('INVALID_QTY', '发放数量必须为正');
+    var chk = this._canInsert(itemId, qty);
+    if (chk.can) {
+      var r = this._insert(itemId, qty);
+      this.srv.ledger.push({ type: 'grant', source: source, itemId: itemId, qty: qty, time: this.srv.time });
+      if (source !== 'push') this.refresh(); // 后台推送刻意不刷新前端（E11）
+      return ok('GRANTED', '直接入包', { source: source, inMail: false });
+    }
+    // 满包
+    if (source === 'purchase' && this.faults.purchaseLosesItem) {
+      this.srv.ledger.push({ type: 'grant_lost', source: source, itemId: itemId, qty: qty, time: this.srv.time });
+      return ok('GRANTED', '', { source: source, inMail: false, silentLost: true });
+    }
+    if (source === 'mail' || source === 'purchase') {
+      this.srv.mail.push({ mailId: 'M' + (this.srv.mail.length + 1), itemId: itemId, qty: qty, reason: '背包已满，邮件补发' });
+      this.refresh();
+      return ok('GRANT_TO_MAIL', '背包已满，道具通过邮件补发', { source: source, inMail: true });
+    }
+    return fail('BAG_FULL', '背包已满，发放被拒绝且未扣减来源', { source: source, remain: qty });
+  };
+
+  BagEngine.prototype.purchase = function (itemId, qty, opts) {
+    opts = opts || {};
+    var gated = this._gate({ fn: 'purchase', args: [itemId, qty, opts] });
+    if (gated) return gated;
+    var def = ITEM_DB[itemId];
+    if (!def || def.deprecated) return fail('INVALID_ITEM_ID', '商品不存在');
+    var cost = def.price * qty;
+    if (this.srv.gold < cost) return fail('NOT_ENOUGH_GOLD', '货币不足，未扣款');
+    this.srv.gold -= cost;
+    var r = this.grant(itemId, qty, 'purchase', opts);
+    r.data.cost = cost;
+    r.data.gold = this.srv.gold;
+    this._log('商城购买：' + def.name + ' ×' + qty + '，扣款 ' + cost);
+    return r;
+  };
+
+  BagEngine.prototype.setCapacity = function (n) {
+    if (!(n > 0) || n > 1000) return fail('INVALID_CAPACITY', '容量值非法');
+    if (n < this.srv.items.length) return fail('SHRINK_BLOCKED', '缩容会使现有道具数超过新上限，已拒绝且不丢弃任何道具', { current: this.srv.items.length, target: n });
+    this.srv.capacity = n;
+    this.refresh();
+    return ok('CAPACITY_SET', '容量已设为 ' + n, { capacity: n });
+  };
+
+  /* ---------- 道具操作 ---------- */
+  BagEngine.prototype._find = function (uid) {
+    for (var i = 0; i < this.srv.items.length; i++) if (this.srv.items[i].uid === uid) return this.srv.items[i];
+    return null;
+  };
+  BagEngine.prototype._viewFind = function (uid) {
+    for (var i = 0; i < this.cli.view.length; i++) if (this.cli.view[i].uid === uid) return this.cli.view[i];
+    return null;
+  };
+
+  BagEngine.prototype.use = function (uid, opts) {
+    opts = opts || {};
+    var opId = opts.opId || this.nextOpId();
+    var gated = this._gate({ fn: 'use', args: [uid, opts] });
+    if (gated) return gated;
+    if (!this.faults.noIdempotency && this.srv.processed[opId]) return this.srv.processed[opId];
+    var key = 'use:' + uid;
+    if (this._inflight[key]) return fail('IN_FLIGHT', '同一道具存在处理中的请求，已合并');
+    this._inflight[key] = true;
+    var finish = (function (self, r) {
+      if (!self._batch) delete self._inflight[key];
+      return r;
+    }).bind(null, this);
+    var it = this._find(uid);
+    if (!it) return finish(fail('ITEM_NOT_FOUND', '道具不存在'));
+    var def = ITEM_DB[it.itemId];
+    if (it.state === '已锁定') return finish(fail('LOCKED', '已锁定道具不可使用'));
+    if (it.state === '已消耗' || it.state === '使用中') return finish(fail('ILLEGAL_STATE', '已消耗/使用中状态不可再次使用'));
+    if (this.isExpired(it) && !this.faults.noExpireCheck) {
+      it.state = '已过期';
+      this.refresh();
+      return finish(fail('EXPIRED', '道具已过期，服务端拒绝使用', { serverTime: this.srv.time }));
+    }
+    var multiUse = def.uses > 1;
+    if (it.qty <= 0 || (multiUse && it.uses <= 0)) return finish(fail('USES_EXHAUSTED', '剩余次数为 0，不可使用'));
+    if (this.DEF.level < def.level) return finish(fail('LEVEL_LOW', '等级不足'));
+    if (def.job && this.DEF.job !== def.job) return finish(fail('JOB_MISMATCH', '职业不符'));
+    var cd = this.srv.cooldowns[it.itemId] || 0;
+    if (this.srv.time < cd) return finish(fail('COOLDOWN', '冷却中，剩余 ' + (cd - this.srv.time) + 'ms'));
+    if (def.cooldownMs) this.srv.cooldowns[it.itemId] = this.srv.time + def.cooldownMs;
+    // 合法迁移链：持有 → 使用中 → 已消耗
+    it.state = '使用中';
+    it.uses -= 1;
+    if (multiUse) { if (it.uses <= 0) it.qty -= 1; }
+    else it.qty -= 1;
+    this.srv.effects += 1;
+    if (it.qty <= 0 || (multiUse && it.uses <= 0)) {
+      it.state = '已消耗';
+      this.srv.recycle.push({ uid: it.uid, itemId: it.itemId, qty: 1, reason: 'consumed' });
+      this.srv.items.splice(this.srv.items.indexOf(it), 1);
+    } else {
+      it.state = '持有';
+    }
+    this.srv.ledger.push({ type: 'use', opId: opId, uid: uid, itemId: it.itemId, time: this.srv.time,
+      transitions: ['持有', '使用中', '已消耗'], effectNo: this.srv.effects });
+    this._log('使用道具：' + def.name + '，效果结算第 ' + this.srv.effects + ' 次（op=' + opId + '）');
+    this.refresh();
+    var r = ok('USED', '使用成功', { opId: opId, effects: this.srv.effects, remainingUses: it.uses });
+    this.srv.processed[opId] = r;
+    return finish(r);
+  };
+
+  BagEngine.prototype.discard = function (uid, opts) {
+    opts = opts || {};
+    var gated = this._gate({ fn: 'discard', args: [uid, opts] });
+    if (gated) return gated;
+    if (opts.confirm === false) return ok('CANCELLED', '用户取消丢弃，数据未变化', { changed: false });
+    var qty = opts.qty === undefined ? 1 : opts.qty;
+    if (!(qty > 0)) return fail('INVALID_QTY', '丢弃数量必须为正');
+    var it = this._find(uid);
+    if (!it) return fail('ITEM_NOT_FOUND', '道具不存在');
+    if (it.state === '已锁定') return fail('LOCKED', '已锁定道具不可丢弃');
+    if (qty > it.qty) return fail('QTY_EXCEED', '丢弃数量大于持有数量');
+    it.qty -= qty;
+    if (it.qty <= 0) this.srv.items.splice(this.srv.items.indexOf(it), 1);
+    this.srv.recycle.push({ uid: uid, itemId: it.itemId, qty: qty, reason: 'discarded' });
+    this.srv.ledger.push({ type: 'discard', uid: uid, qty: qty, time: this.srv.time });
+    this.refresh();
+    return ok('DISCARDED', '丢弃成功', { qty: qty });
+  };
+
+  BagEngine.prototype.discardBatch = function (uids, opts) {
+    var dropped = [], skipped = [];
+    for (var i = 0; i < uids.length; i++) {
+      var it = this._find(uids[i]);
+      if (!it) { skipped.push({ uid: uids[i], reason: 'not found' }); continue; }
+      if (it.state === '已锁定') { skipped.push({ uid: uids[i], reason: 'locked' }); continue; }
+      this.discard(uids[i], opts);
+      dropped.push(uids[i]);
+    }
+    return ok('BATCH_DISCARDED', '仅未锁定道具被丢弃；已跳过锁定道具', { dropped: dropped, skipped: skipped });
+  };
+
+  BagEngine.prototype.lock = function (uid) {
+    var it = this._find(uid);
+    if (!it) return fail('ITEM_NOT_FOUND', '道具不存在');
+    if (it.state === '已锁定') return fail('ALREADY_LOCKED', '已是锁定状态');
+    if (it.state !== '持有') return fail('ILLEGAL_STATE', '仅持有状态可锁定');
+    it.state = '已锁定'; it.lockedAt = this.srv.time;
+    this.srv.ledger.push({ type: 'lock', uid: uid, time: this.srv.time, transitions: ['持有', '已锁定'] });
+    this.refresh();
+    return ok('LOCKED', '已锁定');
+  };
+  BagEngine.prototype.unlock = function (uid) {
+    var it = this._find(uid);
+    if (!it) return fail('ITEM_NOT_FOUND', '道具不存在');
+    if (it.state !== '已锁定') return fail('ILLEGAL_STATE', '仅已锁定状态可解锁');
+    it.state = '持有';
+    this.srv.ledger.push({ type: 'unlock', uid: uid, time: this.srv.time, transitions: ['已锁定', '持有'] });
+    this.refresh();
+    return ok('UNLOCKED', '已解锁');
+  };
+
+  BagEngine.prototype.split = function (uid, n) {
+    if (!(n > 0)) return fail('INVALID_QTY', '拆分数量必须为正');
+    var it = this._find(uid);
+    if (!it) return fail('ITEM_NOT_FOUND', '道具不存在');
+    if (n >= it.qty) return fail('SPLIT_INVALID', '拆分数量必须小于原堆数量，不产生空堆');
+    if (this.srv.items.length >= this.srv.capacity) return fail('BAG_FULL', '无空格可存放新堆');
+    var def = ITEM_DB[it.itemId];
+    if (def.stack <= 1) return fail('NOT_STACKABLE', '该道具不可堆叠');
+    it.qty -= n;
+    var nw = mkItem(this, it.itemId, n);
+    nw.slot = this.srv.items.length;
+    this.srv.items.push(nw);
+    this.refresh();
+    return ok('SPLIT', '拆分成功', { newUid: nw.uid, left: it.qty, right: n });
+  };
+
+  BagEngine.prototype.move = function (uid, slot) {
+    var it = this._find(uid);
+    if (!it) return fail('ITEM_NOT_FOUND', '道具不存在');
+    if (!Number.isInteger(slot) || slot < 0 || slot >= this.srv.capacity) return fail('ILLEGAL_SLOT', '目标格子非法，道具保持原位');
+    var occupied = this.srv.items.some(function (x) { return x.uid !== uid && x.slot === slot; });
+    if (occupied) return fail('SLOT_OCCUPIED', '目标格子已被占用，道具保持原位');
+    it.slot = slot;
+    this.refresh();
+    return ok('MOVED', '拖放成功', { slot: slot });
+  };
+
+  BagEngine.prototype.sell = function (uid, opts) {
+    opts = opts || {};
+    var qty = opts.qty || 1;
+    var it = this._find(uid);
+    if (!it) return fail('ITEM_NOT_FOUND', '道具不存在');
+    var def = ITEM_DB[it.itemId];
+    if (it.state === '已锁定') return fail('LOCKED', '锁定道具不可出售');
+    if (!def.tradeable || def.bound) return fail('NOT_TRADEABLE', '绑定/不可交易道具不可出售');
+    if (qty > it.qty) return fail('QTY_EXCEED', '出售数量大于持有数量');
+    var gain = def.price * qty;
+    if (this.srv.gold + gain > this.DEF.goldCap) return fail('GOLD_OVER_CAP', '出售后金币将超过持有上限，已拦截且金币不变');
+    it.qty -= qty;
+    if (it.qty <= 0) this.srv.items.splice(this.srv.items.indexOf(it), 1);
+    this.srv.gold += gain;
+    this.srv.lastSold = { itemId: it.itemId, qty: qty, price: gain, uid: uid };
+    this.srv.ledger.push({ type: 'sell', uid: uid, gain: gain, time: this.srv.time });
+    this.refresh();
+    return ok('SOLD', '出售成功', { gain: gain, gold: this.srv.gold });
+  };
+  BagEngine.prototype.buyback = function () {
+    if (!this.srv.lastSold) return fail('NOTHING_TO_BUYBACK', '无可回购记录');
+    var s = this.srv.lastSold;
+    if (this.srv.gold < s.price) return fail('NOT_ENOUGH_GOLD', '货币不足');
+    var r = this._insert(s.itemId, s.qty);
+    if (!r.ok) return r;
+    this.srv.gold -= s.price;
+    this.srv.lastSold = null;
+    this.refresh();
+    return ok('BUYBACK', '回购成功', { gold: this.srv.gold });
+  };
+
+  /* ---------- 整理：判定表 R1-R8 ---------- */
+  BagEngine.prototype.sortRules = function () {
+    var items = this.srv.items;
+    var hasEmpty = items.length < this.srv.capacity;
+    var groups = {}, mergeable = {};
+    var hasLocked = false;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it.state === '已锁定') { hasLocked = true; continue; }
+      var stack = ITEM_DB[it.itemId].stack;
+      if (stack > 1 && it.state === '持有') {
+        groups[it.itemId] = (groups[it.itemId] || 0) + 1;
+        if (it.qty < stack) mergeable[it.itemId] = true; // 至少存在一堆未满
+      }
+    }
+    var hasStackable = Object.keys(groups).some(function (k) { return groups[k] >= 2 && !!mergeable[k]; });
+    var rule = (hasEmpty ? '1' : '0') + (hasStackable ? '1' : '0') + (hasLocked ? '1' : '0');
+    var map = { '100': 'R1', '101': 'R2', '110': 'R3', '111': 'R4', '000': 'R5', '001': 'R6', '010': 'R7', '011': 'R8' };
+    return { rule: map[rule], hasEmpty: hasEmpty, hasStackable: hasStackable, hasLocked: hasLocked };
+  };
+
+  BagEngine.prototype.sort = function (opts) {
+    opts = opts || {};
+    var gated = this._gate({ fn: 'sort', args: [opts] });
+    if (gated) return gated;
+    var flags = this.sortRules();
+    var items = this.srv.items;
+    var merged = 0, moved = 0;
+    if (flags.rule === 'R5' || flags.rule === 'R6') {
+      return fail('NO_SORTABLE', flags.rule === 'R6' ? '无可整理内容，锁定道具保持原位' : '无可整理内容，按钮置灰', { rule: flags.rule });
+    }
+    // 合并同类（锁定道具永不参与）
+    if (flags.hasStackable) {
+      var buckets = {};
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it.state !== '持有') continue;
+        var k = it.itemId;
+        if (!buckets[k]) buckets[k] = [];
+        buckets[k].push(it);
+      }
+      var remove = [];
+      for (var key in buckets) {
+        var arr = buckets[key];
+        if (arr.length < 2) continue;
+        var target = arr[0];
+        for (var j = 1; j < arr.length; j++) {
+          var space = ITEM_DB[key].stack - target.qty;
+          if (space <= 0) { target = arr[j]; continue; }
+          var take = Math.min(space, arr[j].qty);
+          target.qty += take; arr[j].qty -= take;
+          merged += take;
+          if (arr[j].qty <= 0) remove.push(arr[j]);
+        }
+      }
+      for (var r = 0; r < remove.length; r++) {
+        var pos = items.indexOf(remove[r]);
+        if (pos >= 0) items.splice(pos, 1);
+      }
+    }
+    // 紧凑排列：锁定道具保持原格位
+    var locked = items.filter(function (x) { return x.state === '已锁定'; });
+    var normal = items.filter(function (x) { return x.state !== '已锁定'; });
+    var before = {};
+    for (var b = 0; b < locked.length; b++) before[locked[b].uid] = locked[b].slot;
+    if (flags.hasEmpty) {
+      var used = {};
+      for (var l = 0; l < locked.length; l++) used[locked[l].slot] = true;
+      var cursor = 0;
+      for (var n = 0; n < normal.length; n++) {
+        while (used[cursor]) cursor++;
+        if (normal[n].slot !== cursor) moved++;
+        normal[n].slot = cursor;
+        cursor++;
+      }
+    }
+    var ordered = locked.concat(normal).sort(function (a, b2) { return a.slot - b2.slot; });
+    if (this.faults.sortMovesLocked) {
+      for (var q = 0; q < ordered.length; q++) if (ordered[q].state === '已锁定') ordered[q].slot = this.srv.capacity - 1 - q;
+      ordered.sort(function (a, b2) { return a.slot - b2.slot; });
+    }
+    this.srv.items = ordered;
+    var lockedMoved = 0;
+    for (var p = 0; p < locked.length; p++) if (before[locked[p].uid] !== locked[p].slot) lockedMoved++;
+    this.srv.ledger.push({ type: 'sort', rule: flags.rule, merged: merged, moved: moved, time: this.srv.time });
+    this.refresh();
+    return ok('SORTED', '整理完成（' + flags.rule + '）', {
+      rule: flags.rule, merged: merged, moved: moved, lockedMoved: lockedMoved
+    });
+  };
+
+  /* ---------- 持久化 / 版本 / 回档 ---------- */
+  BagEngine.prototype.snapshot = function () {
+    return copy({ capacity: this.srv.capacity, items: this.srv.items, gold: this.srv.gold,
+      time: this.srv.time, effects: this.srv.effects, mail: this.srv.mail, version: this.srv.version });
+  };
+  BagEngine.prototype.restore = function (snap) {
+    this.srv.capacity = snap.capacity;
+    this.srv.items = copy(snap.items);
+    this.srv.gold = snap.gold;
+    this.srv.time = snap.time;
+    this.srv.effects = snap.effects;
+    this.srv.mail = copy(snap.mail || []);
+    this.refresh();
+    return ok('RESTORED', '已从快照恢复');
+  };
+  BagEngine.prototype.reloadFromServer = function () {
+    this.cli.view = [];
+    this.cli.open = false;
+    this.cli.listeners = 0;
+    this.refresh();
+    return ok('RELOADED', '已按服务端权威数据重建客户端状态');
+  };
+  BagEngine.prototype.hotUpdate = function (version) {
+    var added = 0;
+    for (var i = 0; i < this.srv.items.length; i++) {
+      var it = this.srv.items[i];
+      if (it.season === undefined) { it.season = 'S0'; added++; }
+      if (it.schema === undefined) { it.schema = this.srv.schema; added++; }
+    }
+    this.srv.version = version || '2.4.2';
+    this.refresh();
+    return ok('HOT_UPDATED', '热更新完成', { version: this.srv.version, fieldsAdded: added });
+  };
+  BagEngine.prototype.loadLegacySave = function (legacy) {
+    // 老版本存档：缺 season / schema / slot 等新字段
+    this.srv.items = (legacy.items || []).map(function (raw) {
+      return { uid: raw.uid, itemId: raw.itemId, qty: raw.qty, state: raw.state || '持有',
+        uses: raw.uses === undefined ? ITEM_DB[raw.itemId].uses : raw.uses,
+        expireAt: raw.expireAt === undefined ? null : raw.expireAt,
+        slot: raw.slot === undefined ? 0 : raw.slot,
+        season: 'S0', schema: 1 };
+    });
+    this.srv.gold = legacy.gold || 0;
+    this.srv.version = '2.4.2';
+    this.refresh();
+    return ok('LEGACY_LOADED', '旧存档兼容加载完成', { count: this.srv.items.length });
+  };
+  BagEngine.prototype.transferServer = function (id) {
+    var before = this.srv.items.map(function (x) { return x.uid + ':' + x.qty; }).join(',');
+    this.srv.serverId = id;
+    this.srv.items = copy(this.srv.items);
+    this.refresh();
+    return ok('TRANSFERRED', '跨服转区完成', { serverId: id, unchanged: before === this.srv.items.map(function (x) { return x.uid + ':' + x.qty; }).join(',') });
+  };
+  BagEngine.prototype.rollback = function (snap) {
+    var r = this.restore(snap);
+    r.code = 'ROLLED_BACK';
+    r.msg = '服务器回档完成，道具状态以快照为准';
+    return r;
+  };
+
+  /* ---------- UI 辅助（可逻辑验证部分） ---------- */
+  BagEngine.prototype.openBag = function () { this.cli.open = true; this.cli.listeners += 1; this.refresh(); return this.cli.listeners; };
+  BagEngine.prototype.closeBag = function () { this.cli.open = false; this.cli.listeners -= 1; return this.cli.listeners; };
+  BagEngine.prototype.gridLayout = function (widthPx, opts) {
+    opts = opts || {};
+    var scale = opts.fontScale || 1;
+    var cell = Math.round(40 * scale), gap = 4, pad = 12;
+    var cols = Math.floor((widthPx - pad * 2 + gap) / (cell + gap));
+    if (this.faults.badLayout && widthPx <= 720) cols += 1; // BUG-05 仅特定小屏分辨率出现
+    var content = pad * 2 + cols * cell + (cols - 1) * gap;
+    return { cols: cols, cell: cell, contentWidth: content, viewport: widthPx,
+      overflow: Math.max(0, content - widthPx), lastColumnClipped: content > widthPx, fontScale: scale };
+  };
+  BagEngine.prototype.formatQty = function (n) {
+    if (!(n > 0)) return '';
+    if (n > 999999) return '999999+';
+    return String(n);
+  };
+  BagEngine.prototype.truncateName = function (s, maxChars) {
+    var arr = Array.from(String(s));
+    return arr.length <= maxChars ? s : arr.slice(0, maxChars).join('') + '…';
+  };
+  BagEngine.prototype.escapeHtml = function (s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+  BagEngine.prototype.iconFallback = function (url) {
+    if (url) return { placeholder: false, src: url };
+    return { placeholder: true, src: 'builtin://icon_missing' };
+  };
+  BagEngine.prototype.contrastRatio = function (hex1, hex2) {
+    function lum(h) {
+      var v = h.replace('#', '');
+      if (v.length === 3) v = v[0] + v[0] + v[1] + v[1] + v[2] + v[2];
+      var c = [0, 2, 4].map(function (i) { return parseInt(v.slice(i, i + 2), 16) / 255; });
+      var f = c.map(function (x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+      return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+    }
+    var a = lum(hex1), b = lum(hex2);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  };
+  BagEngine.prototype.bagEntrance = function () {
+    return { visible: true, blocked: !!this.tutorial, reason: this.tutorial ? '新手引导期间入口按需求锁定' : '' };
+  };
+  BagEngine.prototype.setTutorial = function (v) { this.tutorial = !!v; return this.tutorial; };
+  BagEngine.prototype.countdown = function (uid) {
+    var it = this._find(uid);
+    if (!it || it.expireAt === null) return null;
+    return Math.max(0, it.expireAt - this.srv.time); // 服务器时间剩余，永不为负
+  };
+  BagEngine.prototype.recoverFromRecycle = function (uid) {
+    var idx = -1;
+    for (var i = 0; i < this.srv.recycle.length; i++) if (this.srv.recycle[i].uid === uid) idx = i;
+    if (idx < 0) return fail('NOT_RECOVERABLE', '找回记录不存在');
+    var rec = this.srv.recycle[idx];
+    var r = this._insert(rec.itemId, rec.qty || 1);
+    if (!r.ok) return r;
+    this.srv.recycle.splice(idx, 1);
+    this.refresh();
+    return ok('RECOVERED', '丢弃道具已找回', { uid: uid });
+  };
+  BagEngine.prototype.displayName = function (raw) {
+    // 用于 F09：背包 / 交易行 / 排行榜三处显示一致
+    var safe = this.escapeHtml(this.truncateName(raw, 24));
+    return { bag: safe, market: safe, rank: safe };
+  };
+
+  BagEngine.prototype.fill = function (itemId, count) {
+    // 测试辅助：直接构造满包等前置状态（绕过掉落链路）
+    for (var i = 0; i < count; i++) {
+      var it = mkItem(this, itemId || 'I1009', 1);
+      it.slot = this.srv.items.length;
+      this.srv.items.push(it);
+    }
+    this.refresh();
+    return this.srv.items.length;
+  };
+  BagEngine.prototype.addItem = function (itemId, qty, extra) {
+    var it = mkItem(this, itemId, qty, extra);
+    it.slot = this.srv.items.length;
+    this.srv.items.push(it);
+    this.refresh();
+    return it;
+  };
+
+  return {
+    BagEngine: BagEngine, ITEM_DB: ITEM_DB, STATES: STATES, FAULT_KEYS: FAULT_KEYS, T0: T0,
+    ok: ok, fail: fail, copy: copy
+  };
+});
+
+/* ==== cases_meta.js ==== */
+// 由 extract_meta.py 从源学习包自动生成，请勿手工编辑。
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.CasesMeta = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  return [
+  {
+    "id": "A01",
+    "group": "A 容量与拾取",
+    "title": "空背包首次拾取单个道具",
+    "method": "边界值·零点",
+    "priority": "P1"
+  },
+  {
+    "id": "A02",
+    "group": "A 容量与拾取",
+    "title": "背包仅 1 个道具时拾取",
+    "method": "边界值·内点",
+    "priority": "P2"
+  },
+  {
+    "id": "A03",
+    "group": "A 容量与拾取",
+    "title": "背包 199 格时拾取第 200 个",
+    "method": "边界值·内点",
+    "priority": "P1"
+  },
+  {
+    "id": "A04",
+    "group": "A 容量与拾取",
+    "title": "背包 200 格满时拾取第 201 个",
+    "method": "边界值·上点",
+    "priority": "P0"
+  },
+  {
+    "id": "A05",
+    "group": "A 容量与拾取",
+    "title": "背包满时批量拾取（部分可放入）",
+    "method": "边界值+场景法",
+    "priority": "P1"
+  },
+  {
+    "id": "A06",
+    "group": "A 容量与拾取",
+    "title": "背包满时系统邮件发放道具",
+    "method": "边界值",
+    "priority": "P0"
+  },
+  {
+    "id": "A07",
+    "group": "A 容量与拾取",
+    "title": "背包满时商城购买道具",
+    "method": "边界值",
+    "priority": "P0"
+  },
+  {
+    "id": "A08",
+    "group": "A 容量与拾取",
+    "title": "扩容后立即再次拾取",
+    "method": "状态迁移",
+    "priority": "P1"
+  },
+  {
+    "id": "A09",
+    "group": "A 容量与拾取",
+    "title": "缩容后道具数量超过新上限",
+    "method": "状态迁移·非法",
+    "priority": "P0"
+  },
+  {
+    "id": "A10",
+    "group": "A 容量与拾取",
+    "title": "单次拾取数量超过上限（如 300 个）",
+    "method": "边界值·离点",
+    "priority": "P1"
+  },
+  {
+    "id": "A11",
+    "group": "A 容量与拾取",
+    "title": "拾取数量为 0 的道具堆",
+    "method": "等价类·无效",
+    "priority": "P2"
+  },
+  {
+    "id": "A12",
+    "group": "A 容量与拾取",
+    "title": "拾取数量为负数的异常数据",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "A13",
+    "group": "A 容量与拾取",
+    "title": "拾取不存在的道具 ID",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "A14",
+    "group": "A 容量与拾取",
+    "title": "拾取已下架或已过期的道具 ID",
+    "method": "等价类·无效",
+    "priority": "P2"
+  },
+  {
+    "id": "A15",
+    "group": "A 容量与拾取",
+    "title": "快速连续点击拾取 10 次",
+    "method": "场景法·重复",
+    "priority": "P1"
+  },
+  {
+    "id": "A16",
+    "group": "A 容量与拾取",
+    "title": "拾取过程中断网",
+    "method": "场景法·异常",
+    "priority": "P0"
+  },
+  {
+    "id": "A17",
+    "group": "A 容量与拾取",
+    "title": "拾取成功后杀进程重进",
+    "method": "场景法·异常",
+    "priority": "P0"
+  },
+  {
+    "id": "A18",
+    "group": "A 容量与拾取",
+    "title": "拾取过程中切换账号",
+    "method": "场景法·异常",
+    "priority": "P1"
+  },
+  {
+    "id": "B01",
+    "group": "B 道具操作",
+    "title": "使用普通消耗品",
+    "method": "场景法·基本流",
+    "priority": "P0"
+  },
+  {
+    "id": "B02",
+    "group": "B 道具操作",
+    "title": "使用剩余次数为 1 的道具",
+    "method": "边界值",
+    "priority": "P1"
+  },
+  {
+    "id": "B03",
+    "group": "B 道具操作",
+    "title": "使用剩余次数为 0 的道具",
+    "method": "边界值·零点",
+    "priority": "P1"
+  },
+  {
+    "id": "B04",
+    "group": "B 道具操作",
+    "title": "连续使用同道具直至耗尽",
+    "method": "边界值",
+    "priority": "P1"
+  },
+  {
+    "id": "B05",
+    "group": "B 道具操作",
+    "title": "使用后道具是否正确消失",
+    "method": "功能",
+    "priority": "P0"
+  },
+  {
+    "id": "B06",
+    "group": "B 道具操作",
+    "title": "等级不足时使用有等级限制的道具",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "B07",
+    "group": "B 道具操作",
+    "title": "职业不符时使用限定职业道具",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "B08",
+    "group": "B 道具操作",
+    "title": "冷却期间再次使用",
+    "method": "状态迁移·非法",
+    "priority": "P1"
+  },
+  {
+    "id": "B09",
+    "group": "B 道具操作",
+    "title": "丢弃道具并确认",
+    "method": "场景法",
+    "priority": "P1"
+  },
+  {
+    "id": "B10",
+    "group": "B 道具操作",
+    "title": "丢弃时点击取消",
+    "method": "场景法·备选流",
+    "priority": "P2"
+  },
+  {
+    "id": "B11",
+    "group": "B 道具操作",
+    "title": "丢弃已锁定道具",
+    "method": "判定表",
+    "priority": "P0"
+  },
+  {
+    "id": "B12",
+    "group": "B 道具操作",
+    "title": "丢弃数量为 0",
+    "method": "等价类·无效",
+    "priority": "P2"
+  },
+  {
+    "id": "B13",
+    "group": "B 道具操作",
+    "title": "批量丢弃中混有锁定道具",
+    "method": "判定表",
+    "priority": "P0"
+  },
+  {
+    "id": "B14",
+    "group": "B 道具操作",
+    "title": "出售道具后金币正确增加",
+    "method": "功能",
+    "priority": "P0"
+  },
+  {
+    "id": "B15",
+    "group": "B 道具操作",
+    "title": "出售后金币将超过持有上限",
+    "method": "边界值",
+    "priority": "P0"
+  },
+  {
+    "id": "B16",
+    "group": "B 道具操作",
+    "title": "出售已绑定或不可交易道具",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "B17",
+    "group": "B 道具操作",
+    "title": "出售后立即回购",
+    "method": "场景法",
+    "priority": "P2"
+  },
+  {
+    "id": "B18",
+    "group": "B 道具操作",
+    "title": "堆叠已达上限时拾取同类道具",
+    "method": "边界值",
+    "priority": "P1"
+  },
+  {
+    "id": "B19",
+    "group": "B 道具操作",
+    "title": "将堆叠道具拆分为两堆",
+    "method": "功能",
+    "priority": "P2"
+  },
+  {
+    "id": "B20",
+    "group": "B 道具操作",
+    "title": "拆分数量等于总数量",
+    "method": "边界值",
+    "priority": "P2"
+  },
+  {
+    "id": "B21",
+    "group": "B 道具操作",
+    "title": "拆分数量大于总数量",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "B22",
+    "group": "B 道具操作",
+    "title": "拖放道具到非法格子",
+    "method": "状态迁移·非法",
+    "priority": "P2"
+  },
+  {
+    "id": "C01",
+    "group": "C 状态与迁移",
+    "title": "未获得 → 持有（拾取）",
+    "method": "状态迁移·合法",
+    "priority": "P0"
+  },
+  {
+    "id": "C02",
+    "group": "C 状态与迁移",
+    "title": "持有 → 使用中（使用）",
+    "method": "状态迁移·合法",
+    "priority": "P0"
+  },
+  {
+    "id": "C03",
+    "group": "C 状态与迁移",
+    "title": "使用中 → 已消耗",
+    "method": "状态迁移·合法",
+    "priority": "P0"
+  },
+  {
+    "id": "C04",
+    "group": "C 状态与迁移",
+    "title": "持有 → 已过期（限时到期）",
+    "method": "状态迁移·合法",
+    "priority": "P1"
+  },
+  {
+    "id": "C05",
+    "group": "C 状态与迁移",
+    "title": "持有 → 已锁定",
+    "method": "状态迁移·合法",
+    "priority": "P1"
+  },
+  {
+    "id": "C06",
+    "group": "C 状态与迁移",
+    "title": "已锁定 → 持有（解锁）",
+    "method": "状态迁移·合法",
+    "priority": "P1"
+  },
+  {
+    "id": "C07",
+    "group": "C 状态与迁移",
+    "title": "已消耗 → 持有（非法回退）",
+    "method": "状态迁移·非法",
+    "priority": "P0"
+  },
+  {
+    "id": "C08",
+    "group": "C 状态与迁移",
+    "title": "已过期 → 使用中（非法使用）",
+    "method": "状态迁移·非法",
+    "priority": "P0"
+  },
+  {
+    "id": "C09",
+    "group": "C 状态与迁移",
+    "title": "已锁定 → 已消耗（非法使用）",
+    "method": "状态迁移·非法",
+    "priority": "P0"
+  },
+  {
+    "id": "C10",
+    "group": "C 状态与迁移",
+    "title": "跨天 00:00:00 限时道具到期",
+    "method": "边界值·时间",
+    "priority": "P0"
+  },
+  {
+    "id": "C11",
+    "group": "C 状态与迁移",
+    "title": "23:59:59 使用限时道具",
+    "method": "边界值·时间",
+    "priority": "P1"
+  },
+  {
+    "id": "C12",
+    "group": "C 状态与迁移",
+    "title": "服务器时间与本地时间不一致",
+    "method": "边界值",
+    "priority": "P0"
+  },
+  {
+    "id": "C13",
+    "group": "C 状态与迁移",
+    "title": "切后台 5 分钟后返回",
+    "method": "场景法",
+    "priority": "P1"
+  },
+  {
+    "id": "C14",
+    "group": "C 状态与迁移",
+    "title": "断线重连后道具状态一致",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "C15",
+    "group": "C 状态与迁移",
+    "title": "多端同时登录操作同一道具",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "C16",
+    "group": "C 状态与迁移",
+    "title": "重进游戏后状态恢复",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "D01",
+    "group": "D 判定表：整理规则",
+    "title": "有空格 + 无可堆叠 + 无锁定",
+    "method": "判定表 R1",
+    "priority": "P2"
+  },
+  {
+    "id": "D02",
+    "group": "D 判定表：整理规则",
+    "title": "有空格 + 无可堆叠 + 有锁定",
+    "method": "判定表 R2",
+    "priority": "P1"
+  },
+  {
+    "id": "D03",
+    "group": "D 判定表：整理规则",
+    "title": "有空格 + 有可堆叠 + 无锁定",
+    "method": "判定表 R3",
+    "priority": "P1"
+  },
+  {
+    "id": "D04",
+    "group": "D 判定表：整理规则",
+    "title": "有空格 + 有可堆叠 + 有锁定",
+    "method": "判定表 R4",
+    "priority": "P0"
+  },
+  {
+    "id": "D05",
+    "group": "D 判定表：整理规则",
+    "title": "无空格 + 无可堆叠 + 无锁定",
+    "method": "判定表 R5",
+    "priority": "P2"
+  },
+  {
+    "id": "D06",
+    "group": "D 判定表：整理规则",
+    "title": "无空格 + 无可堆叠 + 有锁定",
+    "method": "判定表 R6",
+    "priority": "P1"
+  },
+  {
+    "id": "D07",
+    "group": "D 判定表：整理规则",
+    "title": "无空格 + 有可堆叠 + 无锁定",
+    "method": "判定表 R7",
+    "priority": "P1"
+  },
+  {
+    "id": "D08",
+    "group": "D 判定表：整理规则",
+    "title": "无空格 + 有可堆叠 + 有锁定",
+    "method": "判定表 R8",
+    "priority": "P0"
+  },
+  {
+    "id": "D09",
+    "group": "D 判定表：整理规则",
+    "title": "全部为锁定道具时整理",
+    "method": "判定表·边界",
+    "priority": "P1"
+  },
+  {
+    "id": "D10",
+    "group": "D 判定表：整理规则",
+    "title": "全部为堆叠已满道具时整理",
+    "method": "判定表·边界",
+    "priority": "P1"
+  },
+  {
+    "id": "D11",
+    "group": "D 判定表：整理规则",
+    "title": "整理过程中断网",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "D12",
+    "group": "D 判定表：整理规则",
+    "title": "整理前后道具总数与 ID 不变",
+    "method": "场景法·校验",
+    "priority": "P0"
+  },
+  {
+    "id": "E01",
+    "group": "E 场景法：完整链路",
+    "title": "基本流：拾取→查看→使用→消耗",
+    "method": "场景法·基本流",
+    "priority": "P0"
+  },
+  {
+    "id": "E02",
+    "group": "E 场景法：完整链路",
+    "title": "拾取→丢弃→找回",
+    "method": "场景法·备选流",
+    "priority": "P2"
+  },
+  {
+    "id": "E03",
+    "group": "E 场景法：完整链路",
+    "title": "拾取→锁定→批量整理",
+    "method": "场景法",
+    "priority": "P1"
+  },
+  {
+    "id": "E04",
+    "group": "E 场景法：完整链路",
+    "title": "商城购买→背包已满→邮件补发",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "E05",
+    "group": "E 场景法：完整链路",
+    "title": "副本掉落→自动拾取→满包提示",
+    "method": "场景法",
+    "priority": "P1"
+  },
+  {
+    "id": "E06",
+    "group": "E 场景法：完整链路",
+    "title": "交易接收→到账→状态刷新",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "E07",
+    "group": "E 场景法：完整链路",
+    "title": "使用过程中断网",
+    "method": "场景法·异常",
+    "priority": "P0"
+  },
+  {
+    "id": "E08",
+    "group": "E 场景法：完整链路",
+    "title": "使用过程中杀进程",
+    "method": "场景法·异常",
+    "priority": "P0"
+  },
+  {
+    "id": "E09",
+    "group": "E 场景法：完整链路",
+    "title": "使用回调重复推送",
+    "method": "场景法·幂等",
+    "priority": "P0"
+  },
+  {
+    "id": "E10",
+    "group": "E 场景法：完整链路",
+    "title": "弱网下重复点击使用",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "E11",
+    "group": "E 场景法：完整链路",
+    "title": "后台推送道具时前台无刷新",
+    "method": "场景法",
+    "priority": "P1"
+  },
+  {
+    "id": "E12",
+    "group": "E 场景法：完整链路",
+    "title": "热更新后背包数据兼容",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "E13",
+    "group": "E 场景法：完整链路",
+    "title": "老版本存档在新版本打开",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "E14",
+    "group": "E 场景法：完整链路",
+    "title": "跨服转区后道具保留",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "E15",
+    "group": "E 场景法：完整链路",
+    "title": "账号封禁期间道具到期",
+    "method": "场景法",
+    "priority": "P2"
+  },
+  {
+    "id": "E16",
+    "group": "E 场景法：完整链路",
+    "title": "服务器回档后道具状态",
+    "method": "场景法",
+    "priority": "P0"
+  },
+  {
+    "id": "F01",
+    "group": "F 兼容、性能与界面",
+    "title": "小屏幕分辨率下背包布局",
+    "method": "兼容性",
+    "priority": "P2"
+  },
+  {
+    "id": "F02",
+    "group": "F 兼容、性能与界面",
+    "title": "平板横竖屏切换",
+    "method": "兼容性",
+    "priority": "P2"
+  },
+  {
+    "id": "F03",
+    "group": "F 兼容、性能与界面",
+    "title": "折叠屏展开与折叠",
+    "method": "兼容性",
+    "priority": "P2"
+  },
+  {
+    "id": "F04",
+    "group": "F 兼容、性能与界面",
+    "title": "低端机打开 200 格背包耗时",
+    "method": "性能",
+    "priority": "P1"
+  },
+  {
+    "id": "F05",
+    "group": "F 兼容、性能与界面",
+    "title": "连续开关背包 50 次内存增长",
+    "method": "性能",
+    "priority": "P1"
+  },
+  {
+    "id": "F06",
+    "group": "F 兼容、性能与界面",
+    "title": "背包快速滚动帧率",
+    "method": "性能",
+    "priority": "P2"
+  },
+  {
+    "id": "F07",
+    "group": "F 兼容、性能与界面",
+    "title": "道具图标加载失败的占位",
+    "method": "功能",
+    "priority": "P2"
+  },
+  {
+    "id": "F08",
+    "group": "F 兼容、性能与界面",
+    "title": "道具名称超长时的显示",
+    "method": "边界值",
+    "priority": "P2"
+  },
+  {
+    "id": "F09",
+    "group": "F 兼容、性能与界面",
+    "title": "道具名称含特殊字符",
+    "method": "等价类·无效",
+    "priority": "P1"
+  },
+  {
+    "id": "F10",
+    "group": "F 兼容、性能与界面",
+    "title": "多语言下名称截断",
+    "method": "本地化",
+    "priority": "P2"
+  },
+  {
+    "id": "F11",
+    "group": "F 兼容、性能与界面",
+    "title": "数量超过显示上限（999999+）",
+    "method": "边界值",
+    "priority": "P1"
+  },
+  {
+    "id": "F12",
+    "group": "F 兼容、性能与界面",
+    "title": "数量为 0 时不显示角标",
+    "method": "边界值",
+    "priority": "P2"
+  },
+  {
+    "id": "F13",
+    "group": "F 兼容、性能与界面",
+    "title": "使用时的音效与震动反馈",
+    "method": "UI",
+    "priority": "P3"
+  },
+  {
+    "id": "F14",
+    "group": "F 兼容、性能与界面",
+    "title": "新手引导期间背包入口",
+    "method": "场景法",
+    "priority": "P2"
+  },
+  {
+    "id": "F15",
+    "group": "F 兼容、性能与界面",
+    "title": "无障碍与大字体模式",
+    "method": "兼容性",
+    "priority": "P3"
+  },
+  {
+    "id": "F16",
+    "group": "F 兼容、性能与界面",
+    "title": "深色模式下图标对比度",
+    "method": "兼容性",
+    "priority": "P3"
+  }
+];
+});
+
+/* ==== cases_impl.js ==== */
+/* 100 条用例的可执行规格
+ * 编号 / 标题 / 设计方法 / 优先级 由 cases_meta.js 提供（源文档自动提取），
+ * 本文件补齐：前置条件、操作步骤、可判定预期结果、程序化断言。
+ * kind: auto=逻辑可验证 | proxy=代理指标（不替代真机） | manual=需真机/人工
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.CasesImpl = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var IMPL = {};
+  function C(id, pre, steps, expect, run) { IMPL[id] = { pre: pre, steps: steps, expect: expect, run: run, kind: 'auto' }; }
+  function P(id, pre, steps, expect, run) { IMPL[id] = { pre: pre, steps: steps, expect: expect, run: run, kind: 'proxy' }; }
+  function M(id, pre, steps, expect, checklist) { IMPL[id] = { pre: pre, steps: steps, expect: expect, checklist: checklist, kind: 'manual' }; }
+  function R(pass, actual) { return { pass: !!pass, actual: String(actual) }; }
+  function qtyOf(e, itemId) {
+    return e.srv.items.filter(function (x) { return x.itemId === itemId; })
+      .reduce(function (a, b) { return a + b.qty; }, 0);
+  }
+  // 合并同类会减少"堆数"但不应改变"道具种类"，故 ID 校验用去重集合
+  function uniqIds(items) {
+    return Array.from(new Set(items.map(function (i) { return i.itemId; }))).sort().join(',');
+  }
+  // 构造判定表 8 种条件组合（容量 8 便于制造"无空格"）
+  function mkSort(NS, e, hasEmpty, hasStackable, hasLocked) {
+    var x = new NS.BagEngine({ capacity: 8, faults: e.faults });
+    if (hasStackable) { x.addItem('I1001', 3); x.addItem('I1001', 3); }
+    else { x.addItem('I1009', 1); x.addItem('I1002', 1); }
+    var target = hasEmpty ? 4 : 8;
+    while (x.srv.items.length < target) x.addItem('I1009', 1);
+    // 锁定最后一个普通道具（I1009），不可锁定可堆叠堆，否则条件组合会被自己改掉
+    if (hasLocked) {
+      var last = x.srv.items[x.srv.items.length - 1];
+      x.lock(last.uid);
+      x.lockUid = last.uid;
+      x.lockSlot = last.slot;
+    }
+    return x;
+  }
+
+  /* ============ A 容量与拾取（18 条） ============ */
+  C('A01', '账号已登录；容量上限 200；背包为空；网络正常',
+    '1. 生成 1 个掉落物 I1001×1　2. 点击拾取　3. 查看服务端、客户端与地面',
+    '入包成功；服务端 1 格；客户端显示 1 格；地面掉落物消失；空状态引导消失',
+    function (e) {
+      var r = e.pickup(e.spawnDrop('I1001', 1));
+      return R(r.ok && e.srv.items.length === 1 && e.getView().length === 1 && e.ground.length === 0,
+        'code=' + r.code + '；服务端=' + e.srv.items.length + '格；客户端=' + e.getView().length + '格；地面=' + e.ground.length + '个');
+    });
+  C('A02', '背包已有 1 个不堆叠道具；容量 200',
+    '1. 生成掉落　2. 点击拾取　3. 核对数量与排序',
+    '拾取成功；背包共 2 格；两格道具 ID 与数量均正确',
+    function (e) {
+      e.addItem('I1009', 1);
+      var r = e.pickup(e.spawnDrop('I1002', 1));
+      return R(r.ok && e.srv.items.length === 2 && qtyOf(e, 'I1002') === 1 && e.getView().length === 2,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格；I1002数量=' + qtyOf(e, 'I1002'));
+    });
+  C('A03', '背包已放入 199 个不堆叠道具（差 1 格满）',
+    '1. 生成掉落　2. 点击拾取第 200 个　3. 核对容量',
+    '仍可拾取第 200 个；背包恰好 200 格；无溢出与报错',
+    function (e) {
+      e.fill('I1009', 199);
+      var r = e.pickup(e.spawnDrop('I1002', 1));
+      return R(r.ok && e.srv.items.length === 200,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格（上限200）');
+    });
+  C('A04', '背包容量 200；已放入 200 个不堆叠道具；地面有 1 个掉落',
+    '1. 生成掉落　2. 点击拾取第 201 个　3. 观察提示、掉落物与背包',
+    '提示「背包已满」；掉落物保留在地面不被吞掉；背包仍为 200；服务端无新增；客户端无新增',
+    function (e) {
+      e.fill('I1009', 200);
+      var r = e.pickup(e.spawnDrop('I1002', 1));
+      return R(r.code === 'BAG_FULL' && e.ground.length === 1 && e.srv.items.length === 200 && e.getView().length === 200,
+        'code=' + r.code + '；地面保留=' + e.ground.length + '个；背包=' + e.srv.items.length + '格；客户端=' + e.getView().length + '格');
+    });
+  C('A05', '背包 200 格满；其中 1 堆 I1001×50（未满堆，可再容纳 49）；地面 4 个 I1001×20',
+    '1. 执行批量拾取 4 个掉落　2. 统计成功/失败数　3. 核对地面剩余与总数量',
+    '部分成功：能合并入未满堆的先入包；放不下的保留在地面并给出提示；背包不超 200；总数量守恒',
+    function (e) {
+      e.fill('I1009', 199); e.addItem('I1001', 50);
+      var ds = []; for (var i = 0; i < 4; i++) ds.push(e.spawnDrop('I1001', 20));
+      var r = e.pickupBatch(ds);
+      var total = qtyOf(e, 'I1001') + e.ground.reduce(function (a, b) { return a + b.qty; }, 0);
+      return R(r.data.success >= 1 && r.data.failed >= 1 && e.ground.length > 0 && e.srv.items.length <= 200 && total === 130,
+        '成功=' + r.data.success + '，拒绝=' + r.data.failed + '；地面剩余=' + e.ground.length + '个；背包=' + e.srv.items.length + '格；I1001总数=' + total);
+    });
+  C('A06', '背包 200 格满；系统邮件待发放 I1001×1',
+    '1. 触发系统邮件发放　2. 查收邮件与背包',
+    '背包不溢出；道具进入邮件且可领取；有明确提示；不得静默丢失',
+    function (e) {
+      e.fill('I1009', 200);
+      var r = e.grant('I1001', 1, 'mail');
+      return R(r.code === 'GRANT_TO_MAIL' && e.srv.mail.length === 1 && e.srv.items.length === 200,
+        'code=' + r.code + '；邮件=' + e.srv.mail.length + '封；背包=' + e.srv.items.length + '格');
+    });
+  C('A07', '背包 200 格满；账号钻石/金币 1000；商城商品 I1002 单价 20',
+    '1. 打开商城购买 I1002×1　2. 支付　3. 查看货币、背包、邮件与提示',
+    '要么拦截购买且不扣款，要么扣款成功后通过邮件补发并给出提示；绝不出现「扣款成功、道具丢失、无提示」',
+    function (e) {
+      e.fill('I1009', 200);
+      var before = e.srv.gold;
+      var r = e.purchase('I1002', 1);
+      var consistent = e.srv.mail.length === 1 && r.data.inMail === true && !r.data.silentLost;
+      return R(e.srv.gold === before - 20 && consistent,
+        '扣款=' + (before - e.srv.gold) + '；code=' + r.code + '；邮件补发=' + e.srv.mail.length + '封；静默丢失=' + !!r.data.silentLost);
+    });
+  C('A08', '背包 200 格满；已购买扩容道具',
+    '1. 扩容至 201 格　2. 立即拾取新掉落　3. 核对容量与道具',
+    '扩容即时生效；拾取成功；背包 201 格；无旧数据丢失',
+    function (e) {
+      e.fill('I1009', 200);
+      var c = e.setCapacity(201);
+      var r = e.pickup(e.spawnDrop('I1002', 1));
+      return R(c.ok && r.ok && e.srv.capacity === 201 && e.srv.items.length === 201,
+        '扩容=' + c.code + '；拾取=' + r.code + '；容量=' + e.srv.capacity + '；背包=' + e.srv.items.length + '格');
+    });
+  C('A09', '背包容量 200；已放入 200 个道具',
+    '1. 发起缩容至 100 格　2. 观察服务端响应　3. 核对道具数量',
+    '缩容被拒绝或按规则明确处理；不得静默丢弃 100 个道具；道具总数仍为 200',
+    function (e) {
+      e.fill('I1009', 200);
+      var r = e.setCapacity(100);
+      return R(r.code === 'SHRINK_BLOCKED' && e.srv.items.length === 200 && e.srv.capacity === 200,
+        'code=' + r.code + '；容量=' + e.srv.capacity + '；道具=' + e.srv.items.length + '个');
+    });
+  C('A10', '背包为空；容量 200；构造单次拾取 300 个的掉落堆',
+    '1. 点击拾取该掉落　2. 观察响应与数据',
+    '拦截超上限拾取；不写入 300 个道具；掉落物保留在地面；服务端不产生脏数据',
+    function (e) {
+      var r = e.pickup(e.spawnDrop('I1001', 300));
+      return R(r.code === 'QTY_OVER_LIMIT' && e.srv.items.length === 0 && e.ground.length === 1,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格；地面=' + e.ground.length + '个');
+    });
+  C('A11', '地面存在数量为 0 的异常掉落堆',
+    '1. 点击拾取　2. 查服务端道具流水',
+    '拦截；不产生 0 数量道具；不写入脏数据',
+    function (e) {
+      var r = e.pickup(e.spawnDrop('I1001', 0));
+      return R(r.code === 'INVALID_QTY' && e.srv.items.length === 0,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格');
+    });
+  C('A12', '地面存在数量为 -5 的异常掉落堆（伪造包/配置错误）',
+    '1. 点击拾取　2. 查服务端数量字段',
+    '拦截；服务端不得写入负数量；记日志',
+    function (e) {
+      var r = e.pickup(e.spawnDrop('I1001', -5));
+      var negative = e.srv.items.some(function (x) { return x.qty < 0; });
+      return R(r.code === 'INVALID_QTY' && !negative,
+        'code=' + r.code + '；负数道具=' + negative);
+    });
+  C('A13', '掉落物携带不存在的道具 ID I9999',
+    '1. 点击拾取　2. 观察客户端与日志',
+    '拦截并记日志；不崩溃；不产生无 ID 道具',
+    function (e) {
+      var r = e.pickup(e.spawnDrop('I9999', 1));
+      return R(r.code === 'INVALID_ITEM_ID' && e.srv.items.length === 0,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格');
+    });
+  C('A14', '掉落物携带已下架道具 ID I1008',
+    '1. 点击拾取　2. 观察响应',
+    '拦截并给出明确提示；不产生已下架道具；不崩溃',
+    function (e) {
+      var r = e.pickup(e.spawnDrop('I1008', 1));
+      return R(r.code === 'INVALID_ITEM_ID' && e.srv.items.length === 0,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格');
+    });
+  C('A15', '地面有 1 个掉落；客户端按钮未做防抖（可连点）',
+    '1. 200ms 内连续点击拾取 10 次　2. 查道具流水与地面',
+    '仅入包一次；服务端流水只有 1 条；地面无残留；不重复发放',
+    function (e) {
+      var d = e.spawnDrop('I1001', 1), op = e.nextOpId(), rs = [];
+      for (var i = 0; i < 10; i++) rs.push(e.pickup(d, { opId: op }));
+      var picks = e.srv.ledger.filter(function (x) { return x.type === 'pickup'; }).length;
+      return R(picks === 1 && e.srv.items.length === 1 && e.ground.length === 0,
+        '流水=' + picks + '条；背包=' + e.srv.items.length + '格；地面=' + e.ground.length + '个；成功响应=' + rs.filter(function (x) { return x.ok; }).length + '次');
+    });
+  C('A16', '背包 100 格；地面 1 个掉落；可在拾取瞬间断网',
+    '1. 点击拾取的瞬间断开网络　2. 恢复网络并等待重连　3. 核对背包与地面',
+    '一致性约束：重连后要么拾取成功且道具在背包，要么失败且道具仍在地面；不得两端都扣或两端都在',
+    function (e) {
+      e.fill('I1009', 100);
+      var d = e.spawnDrop('I1001', 1);
+      e.setOnline(false);
+      var r = e.pickup(d, { opId: 'OP-A16' });
+      e.reconnect();
+      var inBag = qtyOf(e, 'I1001'), onGround = e.ground.reduce(function (a, b) { return a + b.qty; }, 0);
+      var viewOk = e.getView().length === e.srv.items.length;
+      return R(r.code === 'OFFLINE' && inBag + onGround === 1 && viewOk,
+        '断网响应=' + r.code + '；重连后在包=' + inBag + '、在地面=' + onGround + '、合计=' + (inBag + onGround) + '；前后端格数一致=' + viewOk);
+    });
+  C('A17', '背包 100 格；拾取成功后可强杀进程重进',
+    '1. 拾取 1 个道具　2. 杀进程　3. 重进游戏读取服务端数据',
+    '重进后道具仍在；数量与 ID 与服务端一致；不出现回档或重复',
+    function (e) {
+      e.fill('I1009', 100);
+      e.pickup(e.spawnDrop('I1001', 1));
+      var srvQty = qtyOf(e, 'I1001');
+      e.reloadFromServer();
+      var viewQty = e.getView().filter(function (x) { return x.itemId === 'I1001'; }).reduce(function (a, b) { return a + b.qty; }, 0);
+      return R(srvQty === 1 && viewQty === 1 && e.getView().length === e.srv.items.length,
+        '服务端 I1001=' + srvQty + '；重进后客户端=' + viewQty + '；总格数=' + e.getView().length);
+    });
+  C('A18', '账号 A 有 1 个待拾取掉落；已准备账号 B',
+    '1. 断网后发起拾取　2. 拾取过程中切换账号 B　3. 切回账号 A',
+    '账号数据严格隔离；B 中看不到 A 的道具或掉落；切回 A 后未完成操作不污染 B',
+    function (e) {
+      var d = e.spawnDrop('I1001', 1);
+      e.setOnline(false);
+      var r = e.pickup(d, { opId: 'OP-A18' });
+      e.switchAccount('test_bag_02');
+      var bEmpty = e.srv.items.length === 0 && e.ground.length === 0;
+      e.switchAccount('test_bag_01');
+      var aKeep = e.ground.length === 1 && e.srv.items.length === 0;
+      return R(r.code === 'OFFLINE' && bEmpty && aKeep,
+        '切换前响应=' + r.code + '；B账号背包=' + 0 + '格/掉落=' + 0 + '个；A账号切回后地面=' + e.ground.length + '个、背包=' + e.srv.items.length + '格');
+    });
+
+  /* ============ B 道具操作（22 条） ============ */
+  C('B01', '持有 I1001 治疗药水×1；角色等级 60 战士；网络正常',
+    '1. 打开背包　2. 点击使用　3. 查效果流水与道具',
+    '使用成功；效果结算 1 次；道具扣除 1 个；流水含「持有→使用中→已消耗」',
+    function (e) {
+      var it = e.addItem('I1001', 1), r = e.use(it.uid);
+      var rec = e.srv.ledger.filter(function (x) { return x.type === 'use'; })[0];
+      return R(r.ok && e.srv.effects === 1 && !e._find(it.uid) && rec && rec.transitions.join('→') === '持有→使用中→已消耗',
+        'code=' + r.code + '；效果=' + e.srv.effects + '次；迁移=' + (rec ? rec.transitions.join('→') : '无'));
+    });
+  C('B02', '持有三次数卷轴，剩余次数已消耗至 1',
+    '1. 点击使用　2. 观察道具与次数',
+    '允许最后一次使用；使用后剩余次数 0 且道具从背包消失；不出现负数次数',
+    function (e) {
+      var it = e.addItem('I1006', 1, { uses: 1 }), r = e.use(it.uid);
+      return R(r.ok && it.uses === 0 && !e._find(it.uid) && e.srv.effects === 1,
+        'code=' + r.code + '；剩余次数=' + it.uses + '；道具仍在=' + !!e._find(it.uid));
+    });
+  C('B03', '持有多次使用道具，剩余次数为 0 且道具未从背包消失',
+    '1. 点击使用　2. 观察界面与服务端流水',
+    '不可使用；按钮置灰或提示次数已用尽；不触发效果；服务端不产生消耗记录',
+    function (e) {
+      var it = e.addItem('I1006', 1, { uses: 0 }), r = e.use(it.uid);
+      return R(!r.ok && e.srv.effects === 0 && e.srv.ledger.filter(function (x) { return x.type === 'use'; }).length === 0,
+        'code=' + r.code + '；效果=' + e.srv.effects + '次；消耗流水=' + 0 + '条');
+    });
+  C('B04', '持有三次数卷轴，剩余次数 3',
+    '1. 连续点击使用直至耗尽　2. 第 4 次继续点击　3. 核对效果次数与道具',
+    '前 3 次效果各结算 1 次；第 4 次被拒绝；道具在次数耗尽时消失；总数守恒',
+    function (e) {
+      var it = e.addItem('I1006', 1), rs = [];
+      for (var i = 0; i < 4; i++) rs.push(e.use(it.uid));
+      return R(rs[0].ok && rs[1].ok && rs[2].ok && !rs[3].ok && e.srv.effects === 3 && !e._find(it.uid),
+        '响应=' + rs.map(function (x) { return x.code; }).join('/') + '；效果合计=' + e.srv.effects + '次；道具仍在=' + !!e._find(it.uid));
+    });
+  C('B05', '持有 I1001×1；客户端已刷新',
+    '1. 使用道具　2. 同时检查服务端与客户端视图',
+    '前后端该 uid 均已移除；不出现「服务端扣了、界面还显示」的幽灵道具',
+    function (e) {
+      var it = e.addItem('I1001', 1); e.use(it.uid);
+      var inView = e.getView().some(function (x) { return x.uid === it.uid; });
+      return R(!e._find(it.uid) && !inView,
+        '服务端存在=' + !!e._find(it.uid) + '；客户端存在=' + inView);
+    });
+  C('B06', '角色等级 1；持有需要等级 10 的战士专属徽章',
+    '1. 点击使用　2. 观察服务端校验结果',
+    '服务端拒绝（不可只依赖客户端置灰）；无效果；道具保留',
+    function (e, NS) {
+      var x = new NS.BagEngine({ level: 1, faults: e.faults });
+      var it = x.addItem('I1004', 1), r = x.use(it.uid);
+      return R(r.code === 'LEVEL_LOW' && x.srv.effects === 0 && !!x._find(it.uid),
+        'code=' + r.code + '；效果=' + x.srv.effects + '次；道具保留=' + !!x._find(it.uid));
+    });
+  C('B07', '角色职业为法师；持有限定「战士」职业的徽章',
+    '1. 点击使用　2. 观察服务端校验结果',
+    '服务端拒绝职业不符；无效果；道具保留',
+    function (e, NS) {
+      var x = new NS.BagEngine({ job: '法师', faults: e.faults });
+      var it = x.addItem('I1004', 1), r = x.use(it.uid);
+      return R(r.code === 'JOB_MISMATCH' && x.srv.effects === 0 && !!x._find(it.uid),
+        'code=' + r.code + '；效果=' + x.srv.effects + '次；道具保留=' + !!x._find(it.uid));
+    });
+  C('B08', '持有冷却型药剂 I1007×2，冷却时间 30 秒',
+    '1. 使用 1 次　2. 冷却期间立即再次使用　3. 推进 30 秒后再使用',
+    '第 2 次被拒绝且不扣道具；冷却结束后第 3 次成功；效果共 2 次',
+    function (e) {
+      var it = e.addItem('I1007', 2);
+      var r1 = e.use(it.uid), r2 = e.use(it.uid);
+      e.advanceTime(30000);
+      var r3 = e.use(it.uid);
+      return R(r1.ok && r2.code === 'COOLDOWN' && r3.ok && e.srv.effects === 2 && it.qty === 0,
+        '响应=' + [r1.code, r2.code, r3.code].join('/') + '；效果=' + e.srv.effects + '次；剩余数量=' + it.qty);
+    });
+  C('B09', '持有 I1002×1；支持丢弃二次确认',
+    '1. 选中道具点击丢弃　2. 在确认框点击确认　3. 查看背包',
+    '道具从背包移除；记入可回收记录；前后端一致',
+    function (e) {
+      var it = e.addItem('I1002', 1), r = e.discard(it.uid, { confirm: true });
+      return R(r.ok && !e._find(it.uid) && e.srv.recycle.length === 1 && e.getView().length === 0,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格；回收记录=' + e.srv.recycle.length + '条');
+    });
+  C('B10', '持有 I1002×1；已打开丢弃确认框',
+    '1. 点击丢弃　2. 在确认框点击取消　3. 查看背包',
+    '数据完全不变；道具数量与状态与操作前一致；不写流水',
+    function (e) {
+      var it = e.addItem('I1002', 1), r = e.discard(it.uid, { confirm: false });
+      return R(r.code === 'CANCELLED' && e.srv.items.length === 1 && it.qty === 1 && r.data.changed !== true,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格；数量=' + it.qty);
+    });
+  C('B11', '持有 I1002×1 且已锁定',
+    '1. 点击丢弃并确认　2. 查看背包与提示',
+    '拒绝丢弃；道具保留且仍为已锁定；给出明确提示',
+    function (e) {
+      var it = e.addItem('I1002', 1); e.lock(it.uid);
+      var r = e.discard(it.uid, { confirm: true });
+      return R(r.code === 'LOCKED' && e.srv.items.length === 1 && it.state === '已锁定',
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格；状态=' + it.state);
+    });
+  C('B12', '持有 I1002×1；支持输入丢弃数量',
+    '1. 丢弃数量填 0　2. 确认　3. 查流水',
+    '拦截；道具不变；不产生 0 数量丢弃流水',
+    function (e) {
+      var it = e.addItem('I1002', 1), r = e.discard(it.uid, { qty: 0 });
+      return R(r.code === 'INVALID_QTY' && e.srv.items.length === 1 && e.srv.ledger.filter(function (x) { return x.type === 'discard'; }).length === 0,
+        'code=' + r.code + '；背包=' + e.srv.items.length + '格；丢弃流水=0条');
+    });
+  C('B13', '背包 3 个道具，第 2 个已锁定；支持多选批量丢弃',
+    '1. 进入批量选择　2. 全选 3 个　3. 确认丢弃',
+    '仅未锁定的 2 个被丢弃；锁定道具保留且仍锁定；提示「已跳过锁定道具」；部分成功被正确处理',
+    function (e) {
+      var a = e.addItem('I1009', 1), b = e.addItem('I1009', 1), c = e.addItem('I1009', 1);
+      e.lock(b.uid);
+      var r = e.discardBatch([a.uid, b.uid, c.uid], { confirm: true });
+      return R(r.data.dropped.length === 2 && r.data.skipped.length === 1 && e.srv.items.length === 1 && !!e._find(b.uid) && b.state === '已锁定',
+        '丢弃=' + r.data.dropped.length + '个；跳过=' + r.data.skipped.length + '个；剩余=' + e.srv.items.length + '个（状态' + b.state + '）');
+    });
+  C('B14', '账号金币 1000；持有 I1002×1（单价 20）',
+    '1. 出售该道具　2. 查金币与背包',
+    '金币 = 1000 + 20 = 1020；道具移除；流水记录 gain=20',
+    function (e) {
+      var it = e.addItem('I1002', 1), r = e.sell(it.uid);
+      var rec = e.srv.ledger.filter(function (x) { return x.type === 'sell'; })[0];
+      return R(r.ok && e.srv.gold === 1020 && !e._find(it.uid) && rec.gain === 20,
+        '金币=' + e.srv.gold + '（预期1020）；流水gain=' + (rec ? rec.gain : '无'));
+    });
+  C('B15', '账号金币 = 持有上限 - 5；持有 I1002×1（出售可得 20）',
+    '1. 出售道具　2. 查金币与道具',
+    '出售后金币将超过上限时明确拦截；金币不变；道具不丢失；不出现金币溢出为负',
+    function (e) {
+      e.srv.gold = 999999999 - 5;
+      var it = e.addItem('I1002', 1), r = e.sell(it.uid);
+      return R(r.code === 'GOLD_OVER_CAP' && e.srv.gold === 999999994 && !!e._find(it.uid),
+        'code=' + r.code + '；金币=' + e.srv.gold + '；道具保留=' + !!e._find(it.uid));
+    });
+  C('B16', '持有绑定·新手礼包 I1005（不可交易）',
+    '1. 点击出售　2. 观察响应',
+    '拒绝出售；不增加金币；道具保留；提示不可交易',
+    function (e) {
+      var it = e.addItem('I1005', 1), r = e.sell(it.uid);
+      return R(r.code === 'NOT_TRADEABLE' && e.srv.gold === 1000 && !!e._find(it.uid),
+        'code=' + r.code + '；金币=' + e.srv.gold + '；道具保留=' + !!e._find(it.uid));
+    });
+  C('B17', '账号金币 1000；刚售出 I1002×1',
+    '1. 出售道具　2. 立即点击回购　3. 核对金币与道具',
+    '回购成功；金币回到 1000；道具数量与出售前一致；不产生重复发放',
+    function (e) {
+      var it = e.addItem('I1002', 1); e.sell(it.uid);
+      var r = e.buyback();
+      return R(r.ok && e.srv.gold === 1000 && qtyOf(e, 'I1002') === 1,
+        'code=' + r.code + '；金币=' + e.srv.gold + '；I1002数量=' + qtyOf(e, 'I1002'));
+    });
+  C('B18', '持有 I1001 一堆已达堆叠上限 99；背包未满',
+    '1. 生成同类道具掉落 1 个　2. 点击拾取　3. 核对堆叠',
+    '不覆盖原堆；新开一格存放；总数量 = 100；每堆均不超过 99',
+    function (e) {
+      e.addItem('I1001', 99);
+      var r = e.pickup(e.spawnDrop('I1001', 1));
+      var stacks = e.srv.items.filter(function (x) { return x.itemId === 'I1001'; }).map(function (x) { return x.qty; });
+      return R(r.ok && qtyOf(e, 'I1001') === 100 && stacks.length === 2 && stacks.every(function (q) { return q <= 99; }),
+        'code=' + r.code + '；堆叠=' + stacks.join('+') + '；总数=' + qtyOf(e, 'I1001'));
+    });
+  C('B19', '持有 I1001×10 一堆；背包有空格',
+    '1. 选择拆分数量为 4　2. 确认　3. 核对两堆数量',
+    '拆分为 6 + 4 两堆；总数仍为 10；生成新 uid；不出现数量丢失',
+    function (e) {
+      var it = e.addItem('I1001', 10), r = e.split(it.uid, 4);
+      var stacks = e.srv.items.filter(function (x) { return x.itemId === 'I1001'; }).map(function (x) { return x.qty; }).sort(function (a, b) { return a - b; });
+      return R(r.ok && stacks.length === 2 && stacks[0] === 4 && stacks[1] === 6 && qtyOf(e, 'I1001') === 10,
+        'code=' + r.code + '；两堆=' + stacks.join('+') + '；总数=' + qtyOf(e, 'I1001'));
+    });
+  C('B20', '持有 I1001×10 一堆',
+    '1. 拆分数量填 10（等于总数）　2. 确认',
+    '拦截；不产生 0 数量空堆；原堆保持不变',
+    function (e) {
+      var it = e.addItem('I1001', 10), r = e.split(it.uid, 10);
+      return R(r.code === 'SPLIT_INVALID' && e.srv.items.length === 1 && it.qty === 10,
+        'code=' + r.code + '；堆数=' + e.srv.items.length + '；原堆数量=' + it.qty);
+    });
+  C('B21', '持有 I1001×10 一堆',
+    '1. 拆分数量填 11（大于总数）　2. 确认',
+    '拦截；不产生负数量；原堆保持不变',
+    function (e) {
+      var it = e.addItem('I1001', 10), r = e.split(it.uid, 11);
+      return R(r.code === 'SPLIT_INVALID' && it.qty === 10 && !e.srv.items.some(function (x) { return x.qty < 0; }),
+        'code=' + r.code + '；原堆数量=' + it.qty + '；负数堆=无');
+    });
+  C('B22', '背包容量 200；持有 I1009×1 位于格位 0',
+    '1. 拖放该道具到格位 250（越界）　2. 观察位置',
+    '拒绝拖放；道具保持在原格位；不出现数组越界或道具丢失',
+    function (e) {
+      var it = e.addItem('I1009', 1), r = e.move(it.uid, 250);
+      return R(r.code === 'ILLEGAL_SLOT' && it.slot === 0 && e.srv.items.length === 1,
+        'code=' + r.code + '；格位=' + it.slot + '（预期0）；道具数=' + e.srv.items.length);
+    });
+
+  /* ============ C 状态与迁移（16 条） ============ */
+  C('C01', '道具处于「未获得」状态；地面有 1 个合法掉落',
+    '1. 执行拾取　2. 查状态迁移流水',
+    '合法迁移「未获得→持有」；流水记录完整；道具状态为持有',
+    function (e) {
+      e.pickup(e.spawnDrop('I1001', 1));
+      var rec = e.srv.ledger.filter(function (x) { return x.type === 'pickup'; })[0];
+      return R(rec && rec.transitions.join('→') === '未获得→持有' && e.srv.items[0].state === '持有',
+        '迁移=' + (rec ? rec.transitions.join('→') : '无') + '；当前状态=' + e.srv.items[0].state);
+    });
+  C('C02', '道具处于「持有」状态',
+    '1. 点击使用　2. 查状态迁移流水',
+    '合法迁移含「持有→使用中」；服务端有使用记录',
+    function (e) {
+      var it = e.addItem('I1001', 1); e.use(it.uid);
+      var rec = e.srv.ledger.filter(function (x) { return x.type === 'use'; })[0];
+      return R(rec && rec.transitions[0] === '持有' && rec.transitions[1] === '使用中',
+        '迁移=' + (rec ? rec.transitions.join('→') : '无'));
+    });
+  C('C03', '道具已进入「使用中」状态',
+    '1. 等待结算完成　2. 查最终状态与流水',
+    '合法迁移「使用中→已消耗」；道具移除；效果只结算 1 次',
+    function (e) {
+      var it = e.addItem('I1001', 1); e.use(it.uid);
+      var rec = e.srv.ledger.filter(function (x) { return x.type === 'use'; })[0];
+      return R(rec && rec.transitions[2] === '已消耗' && it.state === '已消耗' && e.srv.effects === 1,
+        '迁移=' + (rec ? rec.transitions.join('→') : '无') + '；最终状态=' + it.state + '；效果=' + e.srv.effects + '次');
+    });
+  C('C04', '持有限时道具 I1003，5 分钟后到期；服务器时间可控',
+    '1. 推进服务器时间至到期时刻之后　2. 观察道具状态',
+    '合法迁移「持有→已过期」；状态标记为已过期；倒计时归零不为负',
+    function (e) {
+      var it = e.addItem('I1003', 1);
+      e.advanceTime(300001);
+      return R(it.state === '已过期' && e.countdown(it.uid) === 0,
+        '状态=' + it.state + '；倒计时=' + e.countdown(it.uid) + 'ms');
+    });
+  C('C05', '道具处于「持有」状态',
+    '1. 点击锁定　2. 查状态',
+    '合法迁移「持有→已锁定」；格位保持不变',
+    function (e) {
+      var it = e.addItem('I1009', 1), slot = it.slot, r = e.lock(it.uid);
+      return R(r.ok && it.state === '已锁定' && it.slot === slot,
+        'code=' + r.code + '；状态=' + it.state + '；格位=' + it.slot);
+    });
+  C('C06', '道具处于「已锁定」状态',
+    '1. 点击解锁　2. 查状态',
+    '合法迁移「已锁定→持有」；数量与格位不变',
+    function (e) {
+      var it = e.addItem('I1009', 1); e.lock(it.uid);
+      var r = e.unlock(it.uid);
+      return R(r.ok && it.state === '持有' && it.qty === 1,
+        'code=' + r.code + '；状态=' + it.state + '；数量=' + it.qty);
+    });
+  C('C07', '服务端存在状态为「已消耗」的道具（伪造数据/旧存档）',
+    '1. 直接对该道具发起使用　2. 观察服务端校验',
+    '非法迁移被拒绝；状态不得回退到「持有」；不产生效果与消耗记录',
+    function (e) {
+      var it = e.addItem('I1001', 1, { state: '已消耗' });
+      var r = e.use(it.uid);
+      return R(!r.ok && it.state === '已消耗' && e.srv.effects === 0,
+        'code=' + r.code + '；状态=' + it.state + '；效果=' + e.srv.effects + '次');
+    });
+  C('C08', '持有限时道具；停留在背包界面未刷新；服务器时间已越过过期时刻',
+    '1. 不重进游戏、不刷新界面　2. 直接点击使用　3. 查服务端校验',
+    '服务端拒绝；提示已过期；不产生效果；道具被标记或清理为已过期',
+    function (e) {
+      var it = e.addItem('I1003', 1);
+      e.advanceTime(300001);
+      var viewState = e._viewFind(it.uid) ? e._viewFind(it.uid).state : '缺失'; // 未刷新，仍显示持有
+      var r = e.use(it.uid);
+      return R(r.code === 'EXPIRED' && e.srv.effects === 0 && it.state === '已过期',
+        '界面显示状态=' + viewState + '；使用响应=' + r.code + '；效果=' + e.srv.effects + '次；服务端状态=' + it.state);
+    });
+  C('C09', '道具处于「已锁定」状态；客户端按钮未置灰',
+    '1. 直接对该道具发起使用　2. 观察服务端校验',
+    '非法迁移「已锁定→已消耗」被拒绝；道具仍为已锁定；不产生效果',
+    function (e) {
+      var it = e.addItem('I1001', 1); e.lock(it.uid);
+      var r = e.use(it.uid);
+      return R(r.code === 'LOCKED' && it.state === '已锁定' && e.srv.effects === 0,
+        'code=' + r.code + '；状态=' + it.state + '；效果=' + e.srv.effects + '次');
+    });
+  C('C10', '限时道具在当日 23:59:59 后（次日 00:00:00）到期；服务器时间可控',
+    '1. 23:59:59 查看倒计时　2. 推进到 00:00:00　3. 观察状态与倒计时',
+    '00:00:00 准时失效；倒计时不出现 -1 秒或 00:00:00 仍可使用；状态为已过期',
+    function (e) {
+      var midnight = Date.UTC(2026, 10, 10, 0, 0, 0);
+      e.setServerTime(midnight - 1000);
+      var it = e.addItem('I1003', 1, { expireAt: midnight });
+      var before = e.countdown(it.uid);
+      e.advanceTime(1000);
+      var after = e.countdown(it.uid), r = e.use(it.uid);
+      return R(before === 1000 && after === 0 && it.state === '已过期' && r.code === 'EXPIRED',
+        '23:59:59倒计时=' + before + 'ms；00:00:00倒计时=' + after + 'ms；状态=' + it.state + '；使用=' + r.code);
+    });
+  C('C11', '限时道具将在 00:00:00 到期；当前服务器时间 23:59:59',
+    '1. 在 23:59:59 点击使用　2. 观察结果',
+    '未到期应允许使用；效果结算 1 次；道具消耗；不出现提前失效',
+    function (e) {
+      var midnight = Date.UTC(2026, 10, 10, 0, 0, 0);
+      e.setServerTime(midnight - 1000);
+      var it = e.addItem('I1003', 1, { expireAt: midnight });
+      var r = e.use(it.uid);
+      return R(r.ok && e.srv.effects === 1 && it.state === '已消耗',
+        '23:59:59使用=' + r.code + '；效果=' + e.srv.effects + '次；状态=' + it.state);
+    });
+  C('C12', '服务器时间与本地时间不一致（玩家把本地时间往回调 1 小时）；限时道具已按服务器时间过期',
+    '1. 修改客户端本地时间　2. 不刷新界面直接点击使用　3. 观察判定依据',
+    '以服务器时间为唯一判据；使用被拒绝；客户端改时间不能绕过有效期',
+    function (e) {
+      var it = e.addItem('I1003', 1);
+      e.setLocalTimeOffset(-3600000);
+      e.advanceTime(300001);
+      var clientSaysExpired = e.clientTime() >= it.expireAt;
+      var r = e.use(it.uid);
+      return R(!clientSaysExpired && r.code === 'EXPIRED' && e.srv.effects === 0,
+        '客户端时间判定为已过期=' + clientSaysExpired + '；服务端响应=' + r.code + '；效果=' + e.srv.effects + '次');
+    });
+  C('C13', '持有限时道具；可切后台 5 分钟后返回',
+    '1. 切后台　2. 等待 5 分钟　3. 返回游戏并刷新界面',
+    '返回后界面状态与服务器一致（已过期）；倒计时不出现负数；使用被拒绝',
+    function (e) {
+      var it = e.addItem('I1003', 1);
+      e.advanceTime(300000);
+      e.refresh();
+      var viewState = e._viewFind(it.uid) ? e._viewFind(it.uid).state : '缺失';
+      var r = e.use(it.uid);
+      return R(viewState === '已过期' && it.state === '已过期' && r.code === 'EXPIRED',
+        '返回后界面状态=' + viewState + '；倒计时=' + e.countdown(it.uid) + 'ms；使用=' + r.code);
+    });
+  C('C14', '道具数据已发生变更；可模拟断线重连',
+    '1. 使用 1 个道具　2. 断线　3. 重连后读取服务端状态',
+    '重连后以服务端为准；客户端与服务端数量、状态、效果次数完全一致',
+    function (e) {
+      var it = e.addItem('I1001', 3); e.use(it.uid);
+      e.setOnline(false); e.reconnect();
+      var v = e.getView().filter(function (x) { return x.uid === it.uid; })[0];
+      return R(v && v.qty === it.qty && v.state === it.state && e.getView().length === e.srv.items.length,
+        '客户端数量=' + (v ? v.qty : '缺失') + '，服务端数量=' + it.qty + '；状态=' + (v ? v.state : '-') + '/' + it.state + '；格数一致=' + (e.getView().length === e.srv.items.length));
+    });
+  C('C15', '同一账号在设备 A 与 B 同时在线；持有 I1001×5',
+    '1. 两端几乎同时使用同一道具　2. 查两端显示与服务端记录',
+    '仅一次生效；另一端收到状态刷新；道具只扣 1 个；不出现重复效果或负数',
+    function (e) {
+      var it = e.addItem('I1001', 5);
+      var rs = e.concurrent([
+        function () { e.createSession('A'); return e.use(it.uid, { opId: 'OP-C15-A' }); },
+        function () { e.createSession('B'); return e.use(it.uid, { opId: 'OP-C15-B' }); }
+      ]);
+      var success = rs.filter(function (x) { return x.ok; }).length;
+      return R(success === 1 && e.srv.effects === 1 && it.qty === 4 && e.getView().length === e.srv.items.length,
+        '成功请求=' + success + '/2；响应=' + rs.map(function (x) { return x.code; }).join('/') + '；效果=' + e.srv.effects + '次；剩余=' + it.qty);
+    });
+  C('C16', '背包中有普通道具与锁定道具；已产生使用流水',
+    '1. 记录状态　2. 重进游戏　3. 逐项比对',
+    '道具 ID、数量、状态、格位与效果次数全部恢复且以服务端为准',
+    function (e) {
+      var a = e.addItem('I1009', 1), b = e.addItem('I1001', 3);
+      e.lock(a.uid); e.use(b.uid);
+      var before = e.srv.items.map(function (x) { return x.uid + ':' + x.qty + ':' + x.state + ':' + x.slot; }).join('|');
+      var fx = e.srv.effects;
+      e.reloadFromServer();
+      var after = e.getView().map(function (x) { return x.uid + ':' + x.qty + ':' + x.state + ':' + x.slot; }).join('|');
+      return R(before === after && fx === e.srv.effects,
+        '重进前=' + before + '；重进后=' + after + '；效果次数=' + e.srv.effects);
+    });
+
+  /* ============ D 判定表：整理规则（12 条） ============ */
+  C('D01', '容量 8；有空格；无可堆叠道具；无锁定道具',
+    '1. 点击「整理」　2. 观察规则命中与排列结果',
+    '命中 R1：按默认顺序紧凑排列；合并数 0；道具总数不变',
+    function (e, NS) {
+      var x = mkSort(NS, e, true, false, false), before = x.srv.items.length, r = x.sort();
+      return R(r.ok && r.data.rule === 'R1' && r.data.merged === 0 && x.srv.items.length === before,
+        '规则=' + r.data.rule + '；合并=' + r.data.merged + '；道具格数=' + before + '→' + x.srv.items.length);
+    });
+  C('D02', '容量 8；有空格；无可堆叠道具；有锁定道具',
+    '1. 记录锁定道具格位　2. 点击整理　3. 核对格位',
+    '命中 R2：排列但锁定格位保留；锁定道具位置不变',
+    function (e, NS) {
+      var x = mkSort(NS, e, true, false, true), lockUid = x.lockUid, slot = x.lockSlot, r = x.sort();
+      var after = x._find(lockUid).slot;
+      return R(r.ok && r.data.rule === 'R2' && after === slot && r.data.lockedMoved === 0,
+        '规则=' + r.data.rule + '；锁定格位=' + slot + '→' + after + '；锁定移动数=' + r.data.lockedMoved);
+    });
+  C('D03', '容量 8；有空格；有两堆可合并同类道具；无锁定道具',
+    '1. 点击整理　2. 核对合并结果',
+    '命中 R3：先合并同类再紧凑排列；合并数量 > 0；总数守恒',
+    function (e, NS) {
+      var x = mkSort(NS, e, true, true, false), total = qtyOf(x, 'I1001'), r = x.sort();
+      return R(r.ok && r.data.rule === 'R3' && r.data.merged > 0 && qtyOf(x, 'I1001') === total,
+        '规则=' + r.data.rule + '；合并=' + r.data.merged + '个；I1001总数=' + total + '→' + qtyOf(x, 'I1001'));
+    });
+  C('D04', '容量 8；有空格；有两堆可合并同类道具；有 1 个锁定道具',
+    '1. 记录全部道具 ID、数量与锁定状态　2. 点击整理　3. 等待动画结束并核对',
+    '命中 R4：同类正确合并；锁定道具不参与合并与移动、位置不变；整理前后道具 ID 与总数量完全一致',
+    function (e, NS) {
+      var x = mkSort(NS, e, true, true, true);
+      var lockUid = x.lockUid, slot = x.lockSlot, lockQty = x._find(lockUid).qty;
+      var ids = uniqIds(x.srv.items);
+      var total = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0);
+      var r = x.sort();
+      var after = x._find(lockUid);
+      var idsAfter = uniqIds(x.srv.items);
+      var totalAfter = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0);
+      var pass = r.ok && r.data.rule === 'R4' && r.data.merged > 0 && after.slot === slot &&
+        after.qty === lockQty && after.state === '已锁定' && ids === idsAfter && total === totalAfter;
+      return R(pass,
+        '规则=' + r.data.rule + '；合并=' + r.data.merged + '；锁定格位=' + slot + '→' + after.slot + '；锁定数量=' + lockQty + '→' + after.qty + '；ID种类集合[' + ids + ']一致=' + (ids === idsAfter) + '；总数量=' + total + '→' + totalAfter);
+    });
+  C('D05', '容量 8；无空格；无可堆叠道具；无锁定道具',
+    '1. 点击整理　2. 观察按钮状态与响应',
+    '命中 R5：无可整理内容，提示或按钮置灰；数据完全不变',
+    function (e, NS) {
+      var x = mkSort(NS, e, false, false, false), before = JSON.stringify(x.srv.items), r = x.sort();
+      return R(!r.ok && r.code === 'NO_SORTABLE' && r.data.rule === 'R5' && JSON.stringify(x.srv.items) === before,
+        'code=' + r.code + '；规则=' + r.data.rule + '；数据未变=' + (JSON.stringify(x.srv.items) === before));
+    });
+  C('D06', '容量 8；无空格；无可堆叠道具；有锁定道具',
+    '1. 记录锁定格位　2. 点击整理　3. 核对',
+    '命中 R6：无可整理内容；锁定道具保持原位；数据完全不变',
+    function (e, NS) {
+      var x = mkSort(NS, e, false, false, true), slot = x.lockSlot, before = JSON.stringify(x.srv.items), r = x.sort();
+      var afterSlot = x._find(x.lockUid).slot;
+      return R(!r.ok && r.data.rule === 'R6' && afterSlot === slot && JSON.stringify(x.srv.items) === before,
+        'code=' + r.code + '；规则=' + r.data.rule + '；锁定格位=' + afterSlot + '；数据未变=' + (JSON.stringify(x.srv.items) === before));
+    });
+  C('D07', '容量 8；无空格；有两堆可合并同类道具；无锁定道具',
+    '1. 点击整理　2. 核对合并后空格数',
+    '命中 R7：仅执行合并；合并后腾出空格；总数量守恒',
+    function (e, NS) {
+      var x = mkSort(NS, e, false, true, false), total = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0), r = x.sort();
+      var after = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0);
+      return R(r.ok && r.data.rule === 'R7' && r.data.merged > 0 && x.srv.items.length < 8 && total === after,
+        '规则=' + r.data.rule + '；合并=' + r.data.merged + '；格数=8→' + x.srv.items.length + '（腾出空格）；总数量=' + total + '→' + after);
+    });
+  C('D08', '容量 8；无空格；有两堆可合并同类道具；有 1 个锁定道具',
+    '1. 记录锁定道具状态　2. 点击整理　3. 核对',
+    '命中 R8：只合并非锁定道具；锁定道具不参与合并且位置不变；总数守恒',
+    function (e, NS) {
+      var x = mkSort(NS, e, false, true, true), lockUid = x.lockUid, slot = x.lockSlot;
+      var total = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0), r = x.sort();
+      var after = x._find(lockUid), totalAfter = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0);
+      return R(r.ok && r.data.rule === 'R8' && r.data.merged > 0 && after.slot === slot && after.state === '已锁定' && total === totalAfter,
+        '规则=' + r.data.rule + '；合并=' + r.data.merged + '；锁定格位=' + slot + '→' + after.slot + '；总数量=' + total + '→' + totalAfter);
+    });
+  C('D09', '容量 4；4 个道具全部为已锁定状态',
+    '1. 记录所有格位　2. 点击整理　3. 核对',
+    '全部锁定时不产生任何移动；格位逐一不变；不报错不崩溃',
+    function (e, NS) {
+      var x = new NS.BagEngine({ capacity: 4, faults: e.faults });
+      for (var i = 0; i < 4; i++) x.addItem('I1009', 1);
+      x.srv.items.forEach(function (it) { x.lock(it.uid); });
+      var before = x.srv.items.map(function (i) { return i.uid + ':' + i.slot; }).join('|');
+      var r = x.sort();
+      var after = x.srv.items.map(function (i) { return i.uid + ':' + i.slot; }).join('|');
+      return R(before === after && x.srv.items.length === 4,
+        'code=' + r.code + '；规则=' + (r.data.rule || '-') + '；格位未变=' + (before === after));
+    });
+  C('D10', '容量 4；4 堆同类道具均已达到堆叠上限 99',
+    '1. 点击整理　2. 观察是否误判为可合并',
+    '全部满堆时不存在可合并内容；不得产生 0 数量空堆或数量溢出；数据不变',
+    function (e, NS) {
+      var x = new NS.BagEngine({ capacity: 4, faults: e.faults });
+      for (var i = 0; i < 4; i++) x.addItem('I1001', 99);
+      var before = JSON.stringify(x.srv.items), r = x.sort();
+      var noEmptyStack = x.srv.items.every(function (i) { return i.qty > 0 && i.qty <= 99; });
+      return R(r.code === 'NO_SORTABLE' && noEmptyStack && JSON.stringify(x.srv.items) === before,
+        'code=' + r.code + '；规则=' + (r.data.rule || '-') + '；堆数=' + x.srv.items.length + '；无异常堆=' + noEmptyStack);
+    });
+  C('D11', '存在可整理内容；可在点击整理瞬间断网',
+    '1. 断网后点击整理　2. 恢复网络重连　3. 核对整理结果与总数',
+    '断网期间服务端数据不变；重连重放后状态一致；不出现重复整理导致的数据错乱或丢失',
+    function (e, NS) {
+      var x = mkSort(NS, e, true, true, false);
+      var total = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0);
+      x.setOnline(false);
+      var r = x.sort();
+      var unchangedWhileOffline = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0) === total;
+      x.reconnect();
+      var totalAfter = x.srv.items.reduce(function (a, b) { return a + b.qty; }, 0);
+      return R(r.code === 'OFFLINE' && unchangedWhileOffline && totalAfter === total && x.getView().length === x.srv.items.length,
+        '断网响应=' + r.code + '；断网期间总数未变=' + unchangedWhileOffline + '；重连后总数=' + total + '→' + totalAfter);
+    });
+  C('D12', '含普通、可堆叠、锁定三类道具；整理前已记录基线',
+    '1. 记录整理前各 itemId 总数量、ID 集合与锁定状态　2. 执行整理　3. 逐项比对',
+    '整理前后各 itemId 总数量不变、ID 集合不变、锁定状态与格位不变；验证「数据不变」而非「看起来整齐」',
+    function (e, NS) {
+      var x = mkSort(NS, e, true, true, true);
+      var sumBy = function () {
+        var m = {}; x.srv.items.forEach(function (i) { m[i.itemId] = (m[i.itemId] || 0) + i.qty; }); return JSON.stringify(m);
+      };
+      var before = sumBy();
+      var ids = uniqIds(x.srv.items);
+      var locks = x.srv.items.filter(function (i) { return i.state === '已锁定'; }).map(function (i) { return i.uid + ':' + i.slot; }).join('|');
+      x.sort();
+      var after = sumBy();
+      var idsAfter = uniqIds(x.srv.items);
+      var locksAfter = x.srv.items.filter(function (i) { return i.state === '已锁定'; }).map(function (i) { return i.uid + ':' + i.slot; }).join('|');
+      return R(before === after && ids === idsAfter && locks === locksAfter,
+        '数量映射=' + before + '→' + after + '；ID集合一致=' + (ids === idsAfter) + '；锁定格位一致=' + (locks === locksAfter));
+    });
+
+  /* ============ E 场景法：完整链路（16 条） ============ */
+  C('E01', '账号已登录；副本可产生掉落；背包有空格',
+    '1. 击杀怪物产生掉落　2. 拾取　3. 打开背包查看　4. 使用　5. 确认消耗',
+    '基本流走通：流水依次含 pickup 与 use；ID 与数量正确；效果结算 1 次；道具最终移除',
+    function (e) {
+      e.pickup(e.spawnDrop('I1001', 1));
+      var it = e.srv.items[0]; e.use(it.uid);
+      var types = e.srv.ledger.map(function (x) { return x.type; }).join('→');
+      return R(types === 'pickup→use' && e.srv.effects === 1 && e.srv.items.length === 0,
+        '流水=' + types + '；效果=' + e.srv.effects + '次；背包=' + e.srv.items.length + '格');
+    });
+  C('E02', '地面有 1 个掉落；支持丢弃找回',
+    '1. 拾取　2. 丢弃并确认　3. 通过回收入口找回',
+    '备选流走通：找回后道具重新入包；数量与 ID 与最初一致；不重复发放',
+    function (e) {
+      e.pickup(e.spawnDrop('I1001', 1));
+      var uid = e.srv.items[0].uid;
+      e.discard(uid, { confirm: true });
+      var r = e.recoverFromRecycle(uid);
+      return R(r.ok && qtyOf(e, 'I1001') === 1 && e.srv.items.length === 1,
+        '找回=' + r.code + '；I1001数量=' + qtyOf(e, 'I1001') + '；背包=' + e.srv.items.length + '格');
+    });
+  C('E03', '地面有 3 个掉落；支持锁定与整理',
+    '1. 全部拾取　2. 锁定其中 1 个　3. 执行整理　4. 核对',
+    '锁定道具不参与整理移动；总数量与 ID 不变；整理结果符合判定表规则',
+    function (e) {
+      var ds = []; for (var i = 0; i < 3; i++) ds.push(e.spawnDrop('I1001', 10));
+      e.pickupBatch(ds);
+      var uid = e.srv.items[0].uid, slot = e.srv.items[0].slot;
+      e.lock(uid);
+      var total = qtyOf(e, 'I1001'), r = e.sort();
+      return R(r.ok && e._find(uid).slot === slot && qtyOf(e, 'I1001') === total,
+        '整理=' + r.code + '（' + r.data.rule + '）；锁定格位=' + slot + '→' + e._find(uid).slot + '；I1001总数=' + total + '→' + qtyOf(e, 'I1001'));
+    });
+  C('E04', '背包 200 格满；金币 1000；商城有货',
+    '1. 商城购买 I1002×1　2. 支付　3. 查看背包与邮件',
+    '扣款成功后因满包自动邮件补发；玩家可领取；全程有明确提示；道具不丢失',
+    function (e) {
+      e.fill('I1009', 200);
+      var r = e.purchase('I1002', 1);
+      return R(e.srv.gold === 980 && e.srv.mail.length === 1 && r.data.inMail === true && !r.data.silentLost,
+        '金币=1000→' + e.srv.gold + '；邮件=' + e.srv.mail.length + '封（' + (e.srv.mail[0] ? e.srv.mail[0].reason : '-') + '）；静默丢失=' + !!r.data.silentLost);
+    });
+  C('E05', '背包 200 格满；副本可产生掉落并自动拾取',
+    '1. 击杀怪物产生掉落　2. 触发自动拾取　3. 观察提示与地面',
+    '给出「背包已满」明确提示；掉落物保留在地面；背包仍 200 格；不吞道具',
+    function (e) {
+      e.fill('I1009', 200);
+      var r = e.pickup(e.spawnDrop('I1001', 1));
+      return R(r.code === 'BAG_FULL' && /背包已满/.test(r.msg) && e.ground.length === 1 && e.srv.items.length === 200,
+        'code=' + r.code + '；提示="' + r.msg + '"；地面=' + e.ground.length + '个；背包=' + e.srv.items.length + '格');
+    });
+  C('E06', '账号在线；交易对方发起交付 I1002×1；背包有空格',
+    '1. 接收交易　2. 查看到账　3. 检查客户端状态刷新',
+    '道具到账；数量与 ID 正确；客户端视图与服务端一致；无延迟显示',
+    function (e) {
+      var r = e.grant('I1002', 1, 'trade');
+      var v = e.getView().filter(function (x) { return x.itemId === 'I1002'; });
+      return R(r.ok && qtyOf(e, 'I1002') === 1 && v.length === 1 && v[0].qty === 1,
+        'code=' + r.code + '；服务端数量=' + qtyOf(e, 'I1002') + '；客户端显示=' + (v[0] ? v[0].qty : 0));
+    });
+  C('E07', '持有 I1001×2；可在点击使用瞬间断网',
+    '1. 断网后点击使用　2. 恢复网络并等待重连　3. 核对数量与效果',
+    '一致性约束：重连后要么成功扣 1 且结算 1 次，要么完全不扣不结算；不得「扣了但没效果」',
+    function (e) {
+      var it = e.addItem('I1001', 2);
+      e.setOnline(false);
+      var r = e.use(it.uid, { opId: 'OP-E07' });
+      var beforeQty = it.qty, beforeFx = e.srv.effects;
+      e.reconnect();
+      var consistent = (it.qty === 1 && e.srv.effects === 1) || (it.qty === 2 && e.srv.effects === 0);
+      return R(r.code === 'OFFLINE' && consistent && e.getView().length === e.srv.items.length,
+        '断网响应=' + r.code + '；断网前数量=' + beforeQty + '、效果=' + beforeFx + '；重连后数量=' + it.qty + '、效果=' + e.srv.effects + '；一致性=' + consistent);
+    });
+  C('E08', '持有 I1001×2；已点击使用并获得成功响应；可强杀进程',
+    '1. 使用道具　2. 响应到达后立即杀进程　3. 重进游戏',
+    '以服务端权威数据为准：道具扣 1、效果结算 1 次；重进后不回档、不重复扣',
+    function (e) {
+      var it = e.addItem('I1001', 2); e.use(it.uid);
+      e.reloadFromServer();
+      var v = e.getView().filter(function (x) { return x.uid === it.uid; })[0];
+      return R(it.qty === 1 && e.srv.effects === 1 && v && v.qty === 1,
+        '服务端数量=' + it.qty + '；效果=' + e.srv.effects + '次；重进后客户端数量=' + (v ? v.qty : '缺失'));
+    });
+  C('E09', '持有 I1001×5；可在测试环境重放同一条使用成功响应 3 次',
+    '1. 使用 1 个道具并捕获 opId　2. 将同一响应重复推送 3 次　3. 查数量与效果流水',
+    '效果只结算一次；道具只扣 1 个；服务端有幂等去重；不产生重复副作用',
+    function (e) {
+      var it = e.addItem('I1001', 5), op = 'OP-E09';
+      var rs = [e.use(it.uid, { opId: op }), e.use(it.uid, { opId: op }), e.use(it.uid, { opId: op })];
+      var useLogs = e.srv.ledger.filter(function (x) { return x.type === 'use'; }).length;
+      return R(e.srv.effects === 1 && it.qty === 4 && useLogs === 1,
+        '响应=' + rs.map(function (x) { return x.code; }).join('/') + '；效果=' + e.srv.effects + '次；剩余=' + it.qty + '；使用流水=' + useLogs + '条');
+    });
+  C('E10', '持有 I1001×5；弱网 300ms 延迟 10% 丢包；按钮可重复点击',
+    '1. 在 200ms 内连续点击使用两次　2. 等待两个响应都返回',
+    '两次点击合并为一次有效操作；只扣 1 个道具、只结算 1 次效果；不出现「扣 2 结算 1」',
+    function (e) {
+      var it = e.addItem('I1001', 5);
+      var rs = e.concurrent([
+        function () { return e.use(it.uid, { opId: 'OP-E10-1' }); },
+        function () { return e.use(it.uid, { opId: 'OP-E10-2' }); }
+      ]);
+      return R(e.srv.effects === 1 && it.qty === 4 && rs.filter(function (x) { return x.ok; }).length === 1,
+        '响应=' + rs.map(function (x) { return x.code; }).join('/') + '；效果=' + e.srv.effects + '次；剩余=' + it.qty);
+    });
+  C('E11', '玩家停留在背包界面；服务端后台推送 1 个道具',
+    '1. 后台推送道具（不主动通知前端）　2. 观察前台显示　3. 手动刷新界面',
+    '推送已写入服务端；前台在无刷新时可暂时落后；刷新后立即与服务端一致；不出现静默吞掉',
+    function (e) {
+      var r = e.grant('I1002', 1, 'push');
+      var lag = e.srv.items.length - e.getView().length;
+      e.refresh();
+      var synced = e.getView().length === e.srv.items.length;
+      return R(r.ok && lag === 1 && synced && qtyOf(e, 'I1002') === 1,
+        '推送=' + r.code + '；服务端=' + e.srv.items.length + '格、前台=' + (e.srv.items.length - lag) + '格（落后' + lag + '）；刷新后一致=' + synced);
+    });
+  C('E12', '存在热更新前产生的背包存档；准备 v2.4.2 新配置（新增 season / schema 字段）',
+    '1. 用旧版本产生背包数据　2. 热更新到新版本　3. 打开背包并使用道具',
+    '旧道具可正常显示与使用；新增字段有默认值；不出现解析失败、闪退或道具丢失',
+    function (e) {
+      var it = e.addItem('I1001', 1);
+      delete it.season; delete it.schema;
+      var u = e.hotUpdate('2.4.2');
+      var r = e.use(it.uid);
+      return R(u.ok && it.season === 'S0' && it.schema === 2 && r.ok && e.srv.version === '2.4.2',
+        '热更新=' + u.code + '；补字段=' + u.data.fieldsAdded + '个；版本=' + e.srv.version + '；使用=' + r.code);
+    });
+  C('E13', '存在 v2.4.1 老版本存档（缺 slot / season / schema 字段）',
+    '1. 用新版本客户端打开老存档　2. 检查字段与显示　3. 使用道具',
+    '兼容加载不报错；缺失字段有默认值；道具数量正确；可正常使用',
+    function (e) {
+      var r = e.loadLegacySave({ items: [{ uid: 'OLD1', itemId: 'I1001', qty: 2 }], gold: 500 });
+      var it = e.srv.items[0];
+      // 基线必须在使用前取值：use() 会修改 uses 与 qty
+      var fixedSlot = it.slot, fixedSchema = it.schema, fixedUses = it.uses;
+      var use = e.use(it.uid);
+      return R(r.ok && fixedSlot === 0 && fixedSchema === 1 && fixedUses === 1 && use.ok && it.qty === 1,
+        '加载=' + r.code + '；补齐 slot=' + fixedSlot + '、schema=' + fixedSchema + '、uses=' + fixedUses + '；使用=' + use.code + '；剩余=' + it.qty);
+    });
+  C('E14', '账号在 S1 服持有 3 个道具；可执行跨服转区',
+    '1. 记录道具 uid 与数量　2. 转区到 S2　3. 打开背包核对',
+    '道具全部保留；uid、数量、状态不变；不出现重复发放或丢失',
+    function (e) {
+      e.addItem('I1001', 5); e.addItem('I1009', 1); e.addItem('I1002', 3);
+      var before = e.srv.items.map(function (x) { return x.uid + ':' + x.qty; }).join('|');
+      var r = e.transferServer('S2');
+      var after = e.srv.items.map(function (x) { return x.uid + ':' + x.qty; }).join('|');
+      return R(r.ok && r.data.unchanged && before === after && e.srv.serverId === 'S2',
+        '转区=' + r.code + '；目标服=' + e.srv.serverId + '；数据一致=' + (before === after));
+    });
+  C('E15', '账号处于封禁状态；持有限时道具即将到期',
+    '1. 封禁期间推进服务器时间越过到期时刻　2. 解封　3. 查道具状态',
+    '到期判定仍以服务器时间为准；解封后道具不会「复活」；不因封禁产生额外补偿',
+    function (e) {
+      e.setBan(true);
+      var it = e.addItem('I1003', 1);
+      e.advanceTime(300001);
+      e.setBan(false);
+      return R(it.state === '已过期' && e.srv.banned === false && e.countdown(it.uid) === 0,
+        '解封后状态=' + it.state + '；倒计时=' + e.countdown(it.uid) + 'ms；封禁标记=' + e.srv.banned);
+    });
+  C('E16', '已取得服务器快照；快照后发生过使用消耗',
+    '1. 记录快照　2. 使用道具　3. 执行服务器回档　4. 核对状态',
+    '回档后道具数量、状态与效果计数以快照为准；不出现「状态回退但流水未回退」的不一致',
+    function (e) {
+      var it = e.addItem('I1001', 3);
+      var snap = e.snapshot();
+      e.use(it.uid);
+      var midQty = it.qty, midFx = e.srv.effects;
+      e.rollback(snap);
+      var back = e.srv.items.filter(function (x) { return x.uid === it.uid; })[0];
+      return R(back && back.qty === 3 && e.srv.effects === 0 && e.getView().length === e.srv.items.length,
+        '回档前数量=' + midQty + '、效果=' + midFx + '；回档后数量=' + (back ? back.qty : '缺失') + '、效果=' + e.srv.effects);
+    });
+
+  /* ============ F 兼容、性能与界面（16 条） ============ */
+  P('F01', '720×1280 小屏分辨率；背包内有至少 20 个道具',
+    '1. 打开背包　2. 滑到最右一列　3. 观察图标显示',
+    '最后一列图标完整显示、可正常点击；布局算法计算的内容宽度不超过视口宽度',
+    function (e) {
+      var r = e.gridLayout(720);
+      return R(r.lastColumnClipped === false && r.overflow === 0,
+        '视口=' + r.viewport + 'px；列数=' + r.cols + '；内容宽=' + r.contentWidth + 'px；溢出=' + r.overflow + 'px；末列裁切=' + r.lastColumnClipped);
+    });
+  P('F02', '平板设备；分别处于横屏 1024px 与竖屏 768px',
+    '1. 横屏打开背包　2. 切换竖屏　3. 分别检查布局',
+    '两种方向下列数自适应且均无横向溢出；切换后道具可点击',
+    function (e) {
+      var a = e.gridLayout(1024), b = e.gridLayout(768);
+      return R(a.overflow === 0 && b.overflow === 0 && a.cols > b.cols,
+        '横屏=' + a.cols + '列/溢出' + a.overflow + 'px；竖屏=' + b.cols + '列/溢出' + b.overflow + 'px');
+    });
+  P('F03', '折叠屏设备；折叠态 600px 与展开态 1100px',
+    '1. 折叠态打开背包　2. 展开屏幕　3. 分别检查布局',
+    '展开/折叠均不裁切；列数随宽度增加；无布局残留',
+    function (e) {
+      var a = e.gridLayout(600), b = e.gridLayout(1100);
+      return R(a.overflow === 0 && b.overflow === 0 && b.cols > a.cols,
+        '折叠=' + a.cols + '列/溢出' + a.overflow + 'px；展开=' + b.cols + '列/溢出' + b.overflow + 'px');
+    });
+  P('F04', '中低端机型基准；背包内有 200 个道具；已接入耗时采集',
+    '1. 记录开始时间　2. 打开 200 格背包　3. 记录结束时间',
+    '同步构建 200 格视图数据的耗时低于宽松阈值 500ms（代理指标，不替代真机帧耗时）',
+    function (e) {
+      e.fill('I1009', 200);
+      var t0 = Date.now(); e.openBag(); var ms = Date.now() - t0;
+      return R(ms < 500 && e.getView().length === 200,
+        '打开耗时=' + ms + 'ms（阈值<500ms）；视图格数=' + e.getView().length);
+    });
+  P('F05', '中端机型；已接入对象计数；背包内有 150 个道具',
+    '1. 记录初始监听器与缓存对象数　2. 连续开关背包 50 次　3. 等待 GC 后复查',
+    '监听器与缓存对象数回到基线（无累积增长）；不出现 OOM（代理指标，非真实内存采样）',
+    function (e) {
+      e.fill('I1009', 150);
+      var base = e.cli.listeners, cache = e.cli.cacheSize;
+      for (var i = 0; i < 50; i++) { e.openBag(); e.closeBag(); }
+      return R(e.cli.listeners === base && e.cli.cacheSize === cache,
+        '50次开关后监听器=' + e.cli.listeners + '（基线' + base + '）；缓存对象=' + e.cli.cacheSize + '（基线' + cache + '）');
+    });
+  M('F06', '中端机型；背包 200 格；已接入帧率采集工具',
+    '1. 打开背包　2. 快速连续滚动列表　3. 采集帧率曲线',
+    '滚动过程无持续掉帧，最低帧率与项目标准对齐；无卡顿白块',
+    '真机验证项：需在目标机型上采集 FPS 曲线与 GPU 耗时，记录最低帧率、掉帧次数与阈值；纯逻辑场景无法模拟刷新率与合成器行为。');
+  C('F07', '道具图标资源 URL 缺失或加载失败',
+    '1. 打开背包　2. 观察该道具格位',
+    '显示内置占位图；格位仍可点击；不出现空白格或崩溃',
+    function (e) {
+      var r = e.iconFallback(null);
+      return R(r.placeholder === true && !!r.src,
+        '占位图启用=' + r.placeholder + '；资源=' + r.src);
+    });
+  C('F08', '存在名称长度 30 字符的道具；名称显示上限 12 字符',
+    '1. 在背包列表查看名称　2. 检查截断与省略号',
+    '按字符安全截断并带省略号；不撑破布局；不截断出半个代理对',
+    function (e) {
+      var raw = '超长道具名称测试用字符串ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var r = e.truncateName(raw, 12);
+      return R(Array.from(r).length === 13 && r.slice(-1) === '…',
+        '原长=' + Array.from(raw).length + '字符；截断后=' + Array.from(r).length + '字符；结果="' + r + '"');
+    });
+  C('F09', '具备自定义道具名称能力；输入含 % 、单引号、分号、尖括号与 emoji 的名称',
+    '1. 保存名称　2. 在背包、交易行、排行榜三处查看　3. 检查脚本注入',
+    '正确保存并原样显示；不引发脚本执行；三处显示一致；尖括号被实体转义',
+    function (e) {
+      var raw = "药%水';<script>alert(1)<\/script>🎮";
+      var d = e.displayName(raw);
+      return R(d.bag === d.market && d.market === d.rank && d.bag.indexOf('<script>') === -1 && d.bag.indexOf('&lt;script&gt;') >= 0,
+        '三处一致=' + (d.bag === d.market && d.market === d.rank) + '；含可执行<script>=' + (d.bag.indexOf('<script>') >= 0) + '；转义后片段=' + d.bag.slice(0, 30));
+    });
+  C('F10', '多语言环境；名称含中文、英文、emoji 混合字符',
+    '1. 设置不同语言　2. 查看截断后的名称',
+    '按 Unicode 码点截断；emoji 不被切成两半；不出现乱码方块',
+    function (e) {
+      var raw = '中文Name混合🎮测试 emoji截断边界';
+      var r = e.truncateName(raw, 8);
+      var noBroken = !/\uFFFD/.test(r) && Array.from(r).length === 9;
+      return R(noBroken && r.slice(-1) === '…',
+        '截断结果="' + r + '"；码点数=' + Array.from(r).length + '；替换字符=' + /\uFFFD/.test(r));
+    });
+  C('F11', '道具数量超过显示上限 999999',
+    '1. 查看数量角标格式化结果',
+    '显示为「999999+」；不出现数值溢出或科学计数法；实际数量仍以服务端整数为准',
+    function (e) {
+      var r = e.formatQty(1000000);
+      return R(r === '999999+', 'formatQty(1000000)="' + r + '"');
+    });
+  C('F12', '道具数量为 0（异常数据或边界）',
+    '1. 查看数量角标',
+    '数量为 0 时不显示角标；不出现「0」字样；不出现负数',
+    function (e) {
+      var r = e.formatQty(0);
+      return R(r === '', 'formatQty(0)="' + r + '"（空字符串即不渲染角标）');
+    });
+  M('F13', '设备音量与震动权限正常；背包中有可用消耗品',
+    '1. 使用道具　2. 听音效与感受震动　3. 在静音模式下重复',
+    '音效与震动按设置触发；静音模式下不误触发；无延迟与重复播放',
+    '真机验证项：需人工听感与触觉确认，并覆盖静音/勿扰/无障碍设置组合；纯逻辑场景无音频与马达接口。');
+  C('F14', '账号处于新手引导阶段；背包入口存在',
+    '1. 引导期间尝试进入背包　2. 引导结束后再次进入',
+    '引导期间按需求锁定或给出提示；引导结束后入口恢复可用；不出现卡死',
+    function (e) {
+      e.setTutorial(true); var a = e.bagEntrance();
+      e.setTutorial(false); var b = e.bagEntrance();
+      return R(a.blocked === true && b.blocked === false && a.visible === true,
+        '引导中锁定=' + a.blocked + '（原因"' + a.reason + '"）；引导后可进入=' + (!b.blocked));
+    });
+  P('F15', '开启系统大字体（fontScale=1.5）与无障碍模式；视口 720px',
+    '1. 开启大字体　2. 打开背包　3. 检查图标与文字可读性',
+    '布局单元随字级放大后仍不横向溢出；文字不被裁切（代理指标，真实可读性需人工确认）',
+    function (e) {
+      var r = e.gridLayout(720, { fontScale: 1.5 });
+      return R(r.overflow === 0 && r.cell === 60,
+        '字级=' + r.fontScale + '；单元=' + r.cell + 'px；列数=' + r.cols + '；溢出=' + r.overflow + 'px');
+    });
+  P('F16', '深色模式；前景 #E8EAF0，背景 #1A1D24',
+    '1. 切换深色模式　2. 计算图标与背景的对比度',
+    'WCAG 对比度 ≥ 4.5:1；低对比度图标需有描边或替代色（计算值，非屏幕实测亮度）',
+    function (e) {
+      var ratio = e.contrastRatio('#E8EAF0', '#1A1D24');
+      return R(ratio >= 4.5, '对比度=' + ratio.toFixed(2) + ':1（阈值≥4.5）');
+    });
+
+  return IMPL;
+});
+
+/* ==== runner.js ==== */
+/* 逐项验证执行器：把元数据 + 可执行规格合并，逐条真实运行 */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.VerifyNS = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var ENGINE_VERSION = '1.0.0';
+
+  function summary(results) {
+    var s = { total: results.length, auto: 0, proxy: 0, manual: 0, pass: 0, fail: 0, manualCount: 0, missing: 0 };
+    results.forEach(function (r) {
+      if (r.kind === 'manual') { s.manual++; s.manualCount++; }
+      else if (r.kind === 'proxy') s.proxy++;
+      else if (r.kind === 'missing') { s.missing++; return; }
+      else s.auto++;
+      if (r.status === 'PASS') s.pass++;
+      else if (r.status === 'FAIL') s.fail++;
+    });
+    return s;
+  }
+
+  function runSuite(NS, META, IMPL, faults, label) {
+    var results = META.map(function (meta) {
+      var impl = IMPL[meta.id];
+      var base = {
+        id: meta.id, group: meta.group, title: meta.title, method: meta.method,
+        priority: meta.priority, pre: impl ? impl.pre : '', steps: impl ? impl.steps : '',
+        expect: impl ? impl.expect : '', kind: impl ? impl.kind : 'missing',
+        checklist: impl && impl.checklist ? impl.checklist : ''
+      };
+      if (!impl) return Object.assign(base, { status: 'MISSING', actual: '未找到该编号的可执行断言' });
+      if (impl.kind === 'manual') return Object.assign(base, { status: 'MANUAL', actual: '需真机/人工判定：' + impl.checklist });
+      var e = new NS.BagEngine({ faults: faults || {} });
+      var out;
+      try {
+        out = impl.run(e, NS) || { pass: false, actual: '断言未返回判定结果' };
+      } catch (err) {
+        out = { pass: false, actual: '执行异常：' + (err && err.message ? err.message : String(err)) };
+      }
+      return Object.assign(base, { status: out.pass ? 'PASS' : 'FAIL', actual: out.actual });
+    });
+    return { label: label, summary: summary(results), results: results };
+  }
+
+  // 每个缺陷单独注入，验证「至少有一条预期用例能抓到它」
+  var FAULT_EXPECT = {
+    swallowDrop: ['A04'],
+    noExpireCheck: ['C08'],
+    noIdempotency: ['E09'],
+    sortMovesLocked: ['D04'],
+    purchaseLosesItem: ['A07', 'E04'],
+    badLayout: ['F01']
+  };
+
+  function reverseTest(NS, META, IMPL) {
+    var checks = [];
+    Object.keys(FAULT_EXPECT).forEach(function (fault) {
+      var f = {}; f[fault] = true;
+      var suite = runSuite(NS, META, IMPL, f, '注入 ' + fault);
+      var failedIds = suite.results.filter(function (r) { return r.status === 'FAIL'; }).map(function (r) { return r.id; });
+      var expected = FAULT_EXPECT[fault];
+      var hit = expected.filter(function (id) { return failedIds.indexOf(id) >= 0; });
+      checks.push({
+        fault: fault, expected: expected, caught: failedIds,
+        pass: hit.length > 0, note: hit.length > 0
+          ? '缺陷被 ' + hit.join('/') + ' 捕获，共 ' + failedIds.length + ' 条用例失败'
+          : '没有任何预期用例捕获该缺陷——测试集存在盲区'
+      });
+    });
+    return {
+      pass: checks.every(function (c) { return c.pass; }),
+      checks: checks
+    };
+  }
+
+  function runAll(NS, META, IMPL) {
+    var clean = runSuite(NS, META, IMPL, {}, '基准版（无缺陷注入）');
+    var allFaults = {};
+    NS.FAULT_KEYS.forEach(function (k) { allFaults[k] = true; });
+    var dirty = runSuite(NS, META, IMPL, allFaults, '缺陷注入版（6 个典型缺陷）');
+    var reverse = reverseTest(NS, META, IMPL);
+
+    var metaIds = META.map(function (m) { return m.id; });
+    var implIds = Object.keys(IMPL);
+    var consistency = {
+      metaCount: META.length,
+      implCount: implIds.length,
+      missingImpl: metaIds.filter(function (id) { return implIds.indexOf(id) < 0; }),
+      orphanImpl: implIds.filter(function (id) { return metaIds.indexOf(id) < 0; }),
+      groups: {}
+    };
+    META.forEach(function (m) { consistency.groups[m.group] = (consistency.groups[m.group] || 0) + 1; });
+
+    return {
+      generatedAt: new Date().toISOString(),
+      engineVersion: ENGINE_VERSION,
+      faultKeys: NS.FAULT_KEYS.slice(),
+      consistency: consistency,
+      baseline: clean,
+      injected: dirty,
+      reverseTest: reverse,
+      acceptance: {
+        metaMatchesDoc: META.length === 100,
+        noMissingImpl: consistency.missingImpl.length === 0 && consistency.orphanImpl.length === 0,
+        baselineNoFail: clean.summary.fail === 0 && clean.summary.missing === 0,
+        reverseEffective: reverse.pass,
+        injectedDetected: dirty.summary.fail > 0
+      }
+    };
+  }
+
+  return { runAll: runAll, runSuite: runSuite, reverseTest: reverseTest, summary: summary, ENGINE_VERSION: ENGINE_VERSION };
+});
+</script>
+<script>
+(function () {
+  'use strict';
+  var NS = window.BagNS, META = window.CasesMeta, IMPL = window.CasesImpl, V = window.VerifyNS;
+  var game = null, selectedUid = null, currentSuite = null, fullData = window.PRESET;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+
+  function readFaults() {
+    var f = {};
+    NS.FAULT_KEYS.forEach(function (k) { var el = $('f_' + k); f[k] = !!(el && el.checked); });
+    return f;
+  }
+  function newGame() { game = new NS.BagEngine({ faults: readFaults() }); selectedUid = null; }
+  function shortName(itemId) {
+    var d = NS.ITEM_DB[itemId];
+    if (!d) return '?';
+    var n = d.name.replace(/[·．]/g, '');
+    return n.length > 3 ? n.slice(0, 3) : n;
+  }
+  function fmtTime(ms) {
+    var d = new Date(ms);
+    var p = function (x) { return String(x).padStart(2, '0'); };
+    return p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':' + p(d.getUTCSeconds());
+  }
+
+  function renderGame() {
+    var s = game.getState();
+    $('statusbar').innerHTML = [
+      ['账号', s.account], ['会话', s.session], ['容量', s.items.length + ' / ' + s.capacity + ' 格'],
+      ['金币', s.gold], ['服务器时间', fmtTime(s.time)], ['网络', s.online ? '在线' : '断网'],
+      ['版本', s.version], ['效果结算', s.effects + ' 次'], ['邮件', s.mail.length + ' 封']
+    ].map(function (x) { return '<span>' + x[0] + '：</span><b>' + esc(x[1]) + '</b>'; }).join('');
+
+    $('ground').innerHTML = s.ground.length
+      ? s.ground.map(function (d) { return '<span class="drop" data-drop="' + esc(d.dropId) + '">' + esc(shortName(d.itemId)) + ' ×' + d.qty + '</span>'; }).join('')
+      : '<span class="empty-hint">地面暂无掉落物，点击「击杀怪物」生成</span>';
+    Array.prototype.forEach.call($('ground').querySelectorAll('.drop'), function (el) {
+      el.onclick = function () { act(game.pickup(el.getAttribute('data-drop'))); };
+    });
+
+    var bySlot = {};
+    s.items.forEach(function (it) { bySlot[it.slot] = it; });
+    var cells = [];
+    for (var i = 0; i < s.capacity; i++) {
+      var it = bySlot[i];
+      if (!it) { cells.push('<div class="cell"></div>'); continue; }
+      var cls = 'cell has' + (it.state === '已锁定' ? ' locked' : '') + (it.state === '已过期' ? ' expired' : '') + (it.uid === selectedUid ? ' sel' : '');
+      cells.push('<div class="' + cls + '" data-uid="' + esc(it.uid) + '" title="' + esc((NS.ITEM_DB[it.itemId] || { name: '未知' }).name + ' ×' + it.qty + ' · ' + it.state) + '">' +
+        (it.state === '已锁定' ? '<span class="lk">锁</span>' : '') + esc(shortName(it.itemId)) +
+        '<span class="q">' + esc(game.formatQty(it.qty)) + '</span></div>');
+    }
+    $('grid').innerHTML = cells.join('');
+    Array.prototype.forEach.call($('grid').querySelectorAll('.cell.has'), function (el) {
+      el.onclick = function () { selectedUid = el.getAttribute('data-uid'); renderGame(); };
+    });
+    $('bagcap').textContent = '（' + s.items.length + ' / ' + s.capacity + ' 格，客户端投影）';
+    $('log').innerHTML = s.log.map(function (x) { return '<div><span>' + fmtTime(x.t) + '</span>' + esc(x.text) + '</div>'; }).join('') || '<div class="empty-hint">暂无事件</div>';
+    $('log').scrollTop = $('log').scrollHeight;
+  }
+  function act(r) {
+    if (r && r.msg) game._log('[' + r.code + '] ' + r.msg);
+    renderGame();
+  }
+  function withSelected(fn) {
+    if (!selectedUid) { game._log('请先点击背包中的一个道具格子'); renderGame(); return; }
+    fn(selectedUid);
+  }
+  function bind(id, fn) { $(id).onclick = function () { fn(); }; }
+
+  bind('bKill', function () {
+    var pool = ['I1001', 'I1002', 'I1003', 'I1006', 'I1007', 'I1009'];
+    var n = 1 + Math.floor(Math.random() * 3);
+    for (var i = 0; i < n; i++) game.spawnDrop(pool[Math.floor(Math.random() * pool.length)], 1 + Math.floor(Math.random() * 5));
+    renderGame();
+  });
+  bind('bPickAll', function () { act(game.pickupBatch(game.ground.map(function (d) { return d.dropId; }))); });
+  bind('bFill', function () { game.fill('I1009', Math.max(0, game.srv.capacity - game.srv.items.length)); game._log('已填满背包'); renderGame(); });
+  bind('bBuy', function () {
+    game.fill('I1009', Math.max(0, game.srv.capacity - game.srv.items.length));
+    act(game.purchase('I1002', 1));
+  });
+  bind('bPush', function () { act(game.grant('I1002', 1, 'push')); });
+  bind('bUse', function () { withSelected(function (u) { act(game.use(u)); }); });
+  bind('bLock', function () { withSelected(function (u) { act(game.lock(u)); }); });
+  bind('bUnlock', function () { withSelected(function (u) { act(game.unlock(u)); }); });
+  bind('bDiscard', function () { withSelected(function (u) { act(game.discard(u, { confirm: true })); }); });
+  bind('bSell', function () { withSelected(function (u) { act(game.sell(u)); }); });
+  bind('bSplit', function () { withSelected(function (u) { var it = game._find(u); act(it ? game.split(u, Math.min(2, it.qty - 1)) : { code: 'NO_ITEM', msg: '道具不存在' }); }); });
+  bind('bSort', function () { act(game.sort()); });
+  bind('bOffline', function () { act(game.setOnline(false)); });
+  bind('bReconnect', function () { act(game.reconnect()); });
+  bind('bTime5', function () { game.advanceTime(300000); game._log('服务器时间推进 5 分钟'); renderGame(); });
+  bind('bTimeDay', function () { game.advanceTime(86400000); game._log('服务器时间推进 1 天'); renderGame(); });
+  bind('bRefresh', function () { act(game.refresh()); });
+  bind('bReload', function () { act(game.reloadFromServer()); selectedUid = null; renderGame(); });
+  bind('bReset', function () { newGame(); renderGame(); });
+
+  /* ---------- 验证面板 ---------- */
+  var FAULT_LABEL = {
+    swallowDrop: '满包吞掉落物（A04）', noExpireCheck: '服务端不校验过期（C08）',
+    noIdempotency: '使用接口无幂等（E09）', sortMovesLocked: '整理移动锁定道具（D04）',
+    purchaseLosesItem: '满包购买不到账（A07）', badLayout: '小屏末列裁切（F01）'
+  };
+  $('faults').innerHTML = NS.FAULT_KEYS.map(function (k) {
+    return '<label><input type="checkbox" id="f_' + k + '" value="' + k + '">' + esc(FAULT_LABEL[k]) + '</label>';
+  }).join('');
+
+  function renderKPI(s) {
+    $('kpi').innerHTML = [
+      ['用例总数', s.total], ['通过 PASS', s.pass], ['失败 FAIL', s.fail],
+      ['人工 MANUAL', s.manualCount], ['代理验证', s.proxy], ['自动断言', s.auto]
+    ].map(function (x, i) {
+      var color = i === 2 && x[1] > 0 ? 'var(--fail)' : (i === 1 ? 'var(--pass)' : 'var(--text)');
+      return '<div><b style="color:' + color + '">' + x[1] + '</b><span>' + x[0] + '</span></div>';
+    }).join('');
+  }
+
+  function renderResults(suite) {
+    currentSuite = suite;
+    renderKPI(suite.summary);
+    var groups = Array.from(new Set(suite.results.map(function (r) { return r.group; })));
+    var sel = $('fGroup'), keep = sel.value;
+    sel.innerHTML = '<option value="ALL">全部模块</option>' + groups.map(function (g) { return '<option value="' + esc(g) + '">' + esc(g) + '</option>'; }).join('');
+    if (groups.indexOf(keep) >= 0 || keep === 'ALL') sel.value = keep;
+    renderList();
+  }
+
+  function renderList() {
+    if (!currentSuite) return;
+    var st = $('fStatus').value, gp = $('fGroup').value;
+    var list = currentSuite.results.filter(function (r) {
+      var okS = st === 'ALL' || (st === 'proxy' ? r.kind === 'proxy' : r.status === st);
+      var okG = gp === 'ALL' || r.group === gp;
+      return okS && okG;
+    });
+    $('countHint').textContent = '显示 ' + list.length + ' / ' + currentSuite.results.length + ' 条';
+    $('results').innerHTML = list.map(function (r) {
+      var tag = r.kind === 'proxy' ? '<span class="tag">代理</span>' : (r.kind === 'manual' ? '<span class="tag">人工</span>' : '');
+      return '<details><summary><span class="cid">' + esc(r.id) + '</span>' +
+        '<span class="ttl">' + esc(r.title) + '<span class="mth">' + esc(r.method) + ' · ' + esc(r.priority) + ' · ' + esc(r.group) + '</span></span>' +
+        tag + '<span class="badge ' + r.status + '">' + r.status + '</span></summary>' +
+        '<div class="detail"><dl>' +
+        '<dt>前置条件</dt><dd>' + esc(r.pre) + '</dd>' +
+        '<dt>操作步骤</dt><dd>' + esc(r.steps) + '</dd>' +
+        '<dt>预期结果</dt><dd>' + esc(r.expect) + '</dd>' +
+        '<dt>实际观测值' + (r.kind === 'proxy' ? '（代理指标）' : '') + '</dt>' +
+        '<dd class="actual' + (r.status === 'FAIL' ? ' is-fail' : '') + '">' + esc(r.actual) + '</dd>' +
+        '</dl></div></details>';
+    }).join('') || '<div class="empty-hint" style="padding:12px">当前筛选下没有结果</div>';
+  }
+  $('fStatus').onchange = renderList;
+  $('fGroup').onchange = renderList;
+  $('bExpand').onclick = function () { Array.prototype.forEach.call($('results').querySelectorAll('details'), function (d) { d.open = true; }); };
+  $('bCollapse').onclick = function () { Array.prototype.forEach.call($('results').querySelectorAll('details'), function (d) { d.open = false; }); };
+
+  function renderVerdict(data) {
+    var b = data.baseline.summary, d = data.injected.summary;
+    var allOk = data.acceptance.metaMatchesDoc && data.acceptance.noMissingImpl &&
+      data.acceptance.baselineNoFail && data.acceptance.reverseEffective && data.acceptance.injectedDetected;
+    $('verdict').className = 'verdict' + (allOk ? '' : ' bad');
+    $('verdict').innerHTML = '<b>' + (allOk ? '验收通过' : '验收未通过') + '：</b>' +
+      '基准版 ' + b.pass + ' 条 PASS / ' + b.fail + ' 条 FAIL / ' + b.manualCount + ' 条 MANUAL；' +
+      '注入 6 个典型缺陷后出现 ' + d.fail + ' 条 FAIL；' +
+      '6 项单独反向注入测试 ' + (data.reverseTest.pass ? '全部被对应用例捕获' : '存在盲区') + '。' +
+      '<br><span style="color:#666">这说明测试集不是"永远通过"的空壳：它确实能发现文档 A04 / C08 / E09 / D04 / A07 / F01 所描述的缺陷。</span>';
+    $('reverseBox').innerHTML = '<table class="rv"><thead><tr><th>注入的缺陷</th><th>预期捕获用例</th><th>实际失败用例</th><th>结论</th></tr></thead><tbody>' +
+      data.reverseTest.checks.map(function (c) {
+        return '<tr><td>' + esc(FAULT_LABEL[c.fault] || c.fault) + '</td><td>' + esc(c.expected.join(' / ')) + '</td><td>' + esc(c.caught.join(', ') || '无') + '</td><td style="color:' + (c.pass ? 'var(--pass)' : 'var(--fail)') + '">' + (c.pass ? '捕获' : '盲区') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  function runFull() {
+    var data = V.runAll(NS, META, IMPL);
+    fullData = data;
+    renderResults(data.baseline);
+    renderVerdict(data);
+    $('results').scrollTop = 0;
+  }
+  $('bRunClean').onclick = runFull;
+  $('bRunFaults').onclick = function () {
+    var f = readFaults();
+    var suite = V.runSuite(NS, META, IMPL, f, '自定义缺陷注入');
+    renderResults(suite);
+    var fails = suite.results.filter(function (r) { return r.status === 'FAIL'; }).map(function (r) { return r.id; });
+    $('verdict').className = 'verdict' + (fails.length ? '' : ' bad');
+    $('verdict').innerHTML = '<b>按当前勾选缺陷重跑完成：</b>' + suite.summary.pass + ' 条 PASS、' + fails.length + ' 条 FAIL。' +
+      (fails.length ? '失败用例：' + esc(fails.join(', ')) + '。' : '当前注入未产生可观测失败。') +
+      '<br><span style="color:#666">点击「运行完整验证」可回到基准版与反向测试结论。</span>';
+    $('reverseBox').innerHTML = '';
+    $('results').scrollTop = 0;
+  };
+  $('bExport').onclick = function () {
+    var blob = new Blob([JSON.stringify(fullData, null, 2)], { type: 'application/json;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'verification_results.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  };
+
+  newGame();
+  renderGame();
+  renderResults(fullData.baseline);
+  renderVerdict(fullData);
+})();
+</script>
+</body>
+</html>
