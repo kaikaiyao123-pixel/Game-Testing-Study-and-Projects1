@@ -1,0 +1,15 @@
+.env
+backend/.tools/
+backend/target/
+data/
+*.log
+_probe.html
+_render_probe.html
+web/_ui_*.html
+
+# 运行时 / 测试产物（非源码，不应入库）
+*.pid
+.probe_login.json
+.probe_tok.txt
+.selfcheck_out.txt
+

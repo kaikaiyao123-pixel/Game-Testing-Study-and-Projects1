@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>首页 · 炫与梓</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="guard-pending" data-page="home">
+  <div id="bg-layer" class="bg-layer" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand-inline" href="home.html">
+        <img class="brand-avatar" src="assets/head.png" alt="">
+        <span class="brand-name">炫与梓</span>
+      </a>
+
+      <nav class="nav" id="main-nav" aria-label="主导航">
+        <a class="nav-link is-active" data-nav="home" href="home.html" aria-current="page">主页</a>
+        <a class="nav-link" data-nav="articles" href="articles.html">文章</a>
+        <a class="nav-link" data-nav="media" href="media.html">影视资源</a>
+        <a class="nav-link" data-nav="vault" href="vault.html">げん的宝库</a>
+        <a class="nav-link" data-nav="moments" href="moments.html">碎碎念</a>
+      </nav>
+
+      <div class="user-area">
+      <div class="guest-actions" id="user-guest">
+          <a class="btn btn-ghost" href="login.html">登录</a>
+          <a class="btn btn-primary btn-sm" href="login.html?tab=register">注册</a>
+        </div>
+
+      <div class="user-menu" id="user-session" hidden>
+          <button class="user-trigger" id="user-menu-btn" type="button"
+                  aria-haspopup="menu" aria-expanded="false" aria-controls="user-dropdown">
+            <img class="avatar" id="user-avatar" src="assets/head.png" alt="用户头像">
+            <span class="user-name" id="user-name">加载中</span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+
+          <div class="user-dropdown" id="user-dropdown" role="menu" hidden>
+            <div class="dropdown-head">
+              <img class="dropdown-avatar" src="assets/head.png" alt="">
+            <div class="dropdown-id">
+              <strong id="dropdown-name">加载中</strong>
+            </div>
+            </div>
+
+            <div class="dropdown-list">
+              <a class="dropdown-item" role="menuitem" href="profile.html">
+                <span class="item-icon" aria-hidden="true">◇</span>
+                <span class="item-label">个人资料</span>
+              </a>
+              <a class="dropdown-item" role="menuitem" href="settings.html">
+                <span class="item-icon" aria-hidden="true">◇</span>
+                <span class="item-label">账号设置</span>
+              </a>
+            </div>
+
+            <div class="dropdown-divider" role="separator"></div>
+
+            <div class="dropdown-foot">
+              <button class="dropdown-item is-danger" id="btn-logout" type="button" role="menuitem">
+                <span class="item-icon" aria-hidden="true">↪</span>
+                <span class="item-label">退出登录</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="展开导航" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="cover" id="home-cover">
+      <div class="cover-inner">
+        <div class="poem" id="home-poem" role="img"
+             aria-label="怎叹那青丝以落幕，青山不知我痛苦">
+          <p class="poem-line" data-text="怎叹那青丝以落幕，" aria-hidden="true"></p>
+          <p class="poem-line" data-text="青山不知我痛苦" aria-hidden="true"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero">
+      <h1 id="welcome-title">欢迎来到 炫与梓</h1>
+      <p class="hero-desc" id="welcome-desc">正在校验登录状态…</p>
+
+      <div class="meta-grid" id="hero-session">
+        <div class="meta-item"><span>本次登录</span><strong id="meta-created">—</strong></div>
+        <div class="meta-item"><span>有效期至</span><strong id="meta-expires">—</strong></div>
+      </div>
+
+      <div class="hero-guest" id="hero-guest" hidden>
+        <p>一个关于记录、收藏与日常的地方。公开内容无需登录即可浏览。</p>
+        <div class="state-actions">
+          <a class="btn btn-primary" href="login.html">登录</a>
+          <a class="btn btn-ghost" href="login.html?tab=register">注册</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="content-root" id="home-content" hidden></div>
+  </main>
+
+  <audio id="bg-audio" src="assets/bgm.wav" loop preload="auto"></audio>
+  <button id="audio-toggle" class="audio-toggle" type="button" aria-pressed="false" aria-label="开启背景音乐">
+    <span class="audio-ico" aria-hidden="true">♪</span>
+    <span class="audio-label">音乐</span>
+  </button>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/site.js"></script>
+  <script src="js/poem.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/audio.js"></script>
+</body>
+</html>

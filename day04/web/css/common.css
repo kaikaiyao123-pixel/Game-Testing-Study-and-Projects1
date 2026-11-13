@@ -1,0 +1,413 @@
+/* ============================================================
+   通用基础层 —— 「暖夕玻璃」设计系统
+   取色自指定壁纸（夕阳东京塔 / 落日橙 / 暮紫 / 玫瑰红）。
+   目标：暖调统一、层次清晰、触控友好、焦点可见。
+   ============================================================ */
+:root {
+  /* 表面 */
+  --bg: #2a1c28;
+  --surface: rgba(255, 252, 250, 0.90);
+  --surface-solid: #fffaf7;
+  --surface-soft: rgba(255, 250, 247, 0.72);
+
+  /* 文字：暖调中性灰，避免纯黑的生硬 */
+  --text: #2e2530;
+  --text-2: #6d5f6a;
+  --text-3: #a0939c;
+
+  /* 分隔线 */
+  --line: rgba(120, 88, 100, 0.14);
+  --line-strong: rgba(120, 88, 100, 0.26);
+
+  /* 主色：落日珊瑚 → 深玫瑰（白字对比度满足 AA） */
+  --primary: #c0455e;
+  --primary-light: #ee7a6a;
+  --primary-dark: #a3354f;
+  --primary-soft: #fdeee9;
+  --primary-ring: rgba(192, 69, 94, 0.20);
+
+  --danger: #b93a2f;
+  --danger-soft: #fdf0ee;
+  --success: #2e7d5b;
+
+  --radius: 24px;
+  --radius-sm: 12px;
+  --shadow-card: 0 26px 64px rgba(48, 24, 38, 0.26), 0 4px 14px rgba(48, 24, 38, 0.10);
+  --shadow-sm: 0 6px 18px rgba(48, 24, 38, 0.12);
+
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Yu Gothic",
+    "Hiragino Kaku Gothic ProN", "Meiryo", "Helvetica Neue", Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background: #f7eee9;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+button,
+input {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(192, 69, 94, 0.48);
+  outline-offset: 2px;
+}
+
+/* ---------- 背景层（由 js/background.js 注入） ---------- */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.bg-canvas,
+.bg-media,
+.bg-slide {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bg-media,
+.bg-slide {
+  object-fit: cover;
+}
+
+/* 壁纸铺底：缓慢的 Ken Burns 漂移，让静态图也有呼吸感 */
+.bg-wallpaper {
+  object-position: center 42%;
+  animation: wall-drift 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes wall-drift {
+  0%   { transform: scale(1.03) translate3d(0, 0, 0); }
+  100% { transform: scale(1.12) translate3d(-1.4%, -1%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-wallpaper { animation: none; }
+  .bg-video.is-loop-soften { animation: none; }
+}
+
+/* 视频模式下的底层封面：不参与漂移，避免与视频画面错位 */
+.bg-wallpaper.is-underlay {
+  animation: none;
+  transform: none;
+}
+
+/* 动态壁纸视频：与封面保持一致的取景中心 */
+.bg-video {
+  object-position: center 42%;
+}
+
+/* 片段回跳时的 320ms 柔化：把 3~6s 循环点的硬切掩进一次呼吸 */
+.bg-video.is-loop-soften {
+  animation: loop-soften 320ms ease-out;
+}
+
+@keyframes loop-soften {
+  0%   { opacity: 0.58; }
+  100% { opacity: 1; }
+}
+
+.bg-slide {
+  opacity: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 1.2s ease-in-out;
+}
+
+.bg-slide.is-active {
+  opacity: 1;
+}
+
+/* 暖调暗角遮罩：保留壁纸色彩，同时压暗四周突出前景卡片 */
+.bg-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 36%,
+      rgba(255, 238, 224, 0.08) 0%,
+      rgba(48, 26, 42, 0.12) 52%,
+      rgba(34, 18, 30, 0.46) 100%),
+    linear-gradient(180deg,
+      rgba(40, 22, 38, 0.14) 0%,
+      rgba(40, 22, 38, 0.36) 100%);
+}
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(192, 69, 94, 0.30);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 12px 28px rgba(192, 69, 94, 0.38);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--text-2);
+  border-color: var(--line-strong);
+  min-height: 38px;
+  padding: 0 15px;
+  font-size: 14px;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-color: rgba(192, 69, 94, 0.34);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* ---------- 表单 ---------- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.88);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  overflow: hidden;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 4px var(--primary-ring);
+}
+
+.input-wrap input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 14px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.input-wrap input::placeholder {
+  color: var(--text-3);
+}
+
+.input-prefix {
+  padding: 0 13px;
+  font-size: 14px;
+  color: var(--text-2);
+  border-right: 1px solid var(--line);
+  line-height: 48px;
+  white-space: nowrap;
+}
+
+.pwd-toggle {
+  align-self: stretch;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pwd-toggle:hover {
+  color: var(--primary);
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.form-error {
+  margin: -4px 0 0;
+  padding: 10px 13px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  border: 1px solid rgba(185, 58, 47, 0.20);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* ---------- 轻提示 ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: rgba(46, 30, 40, 0.94);
+  color: #ffffff;
+  font-size: 14px;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.toast.is-ok {
+  background: rgba(46, 125, 91, 0.95);
+}
+
+.toast.is-error {
+  background: rgba(168, 50, 40, 0.95);
+}
+
+/* ---------- 背景音乐开关 ---------- */
+.audio-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(34, 18, 30, 0.30);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.audio-toggle:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.audio-toggle.is-on {
+  color: #fff;
+  border-color: var(--primary-light);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  box-shadow: 0 10px 26px rgba(192, 69, 94, 0.40);
+}
+
+.audio-toggle.is-on .audio-ico {
+  animation: audio-pulse 1.6s ease-in-out infinite;
+}
+
+.audio-toggle .audio-label {
+  letter-spacing: 0.04em;
+}
+
+.audio-toggle:focus-visible {
+  outline: 3px solid var(--primary-ring);
+  outline-offset: 2px;
+}
+
+@keyframes audio-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1.08); }
+}

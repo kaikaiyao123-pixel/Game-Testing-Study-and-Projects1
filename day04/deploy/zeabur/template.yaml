@@ -1,0 +1,151 @@
+# yaml-language-server: $schema=https://schema.zeabur.app/template.json
+#
+# Zeabur 官方模板（不是 docker-compose.yml —— 平台不解析 Compose）。
+# 部署前把下面 3 个 ghcr.io/OWNER/... 镜像占位符替换为你自己推送的镜像；
+# 构建与推送命令见 deploy/README.md。
+#
+# 与本机开发栈的差别：
+#   - frontend 容器同时提供静态资源和 /api 反向代理，浏览器全程同源；
+#   - mysql 镜像内预置 cloud-init.sql，首次创建卷自动建齐 16 张表；
+#   - 所有服务监听 0.0.0.0，端口按 Zeabur 的 {id, port, type} 声明。
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: 炫与梓 · 个人博客
+spec:
+  description: |
+    Spring Boot 3.3.5 + MySQL 8.0 + Redis 7 + Node 静态前端。
+    前端容器同源反代 /api，只对外暴露一个端口；首次创建数据卷自动执行 16 张表的迁移。
+  tags:
+    - Blog
+    - Java
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: 前端域名
+      description: 绑定到 frontend 服务的访问域名
+  readme: |
+    部署完成后：
+    1. 在 Zeabur 控制台确认 frontend 已绑定域名（variables.PUBLIC_DOMAIN）。
+    2. 校验表数量：用控制台给出的 MySQL 连接信息执行 deploy/db/verify.sql，期望 16。
+    3. 访问 /api/health 与 /api/home/summary 确认后端连通。
+    Free Plan 服务空闲会自动休眠，首次唤醒可能有数秒冷启动，且无自动数据库备份。
+  services:
+    - name: mysql
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: ghcr.io/OWNER/blogg-mysql-with-schema:latest
+        ports:
+          - id: mysql
+            port: 3306
+            type: TCP
+        command:
+          - --character-set-server=utf8mb4
+          - --collation-server=utf8mb4_unicode_ci
+        volumes:
+          - id: blogg-mysql-data
+            dir: /var/lib/mysql
+        env:
+          MYSQL_ROOT_PASSWORD:
+            default: "${PASSWORD}"
+            expose: true
+          MYSQL_DATABASE:
+            default: blog
+            expose: true
+          MYSQL_USER:
+            default: blog
+            expose: true
+          MYSQL_PASSWORD:
+            default: "${PASSWORD}"
+            expose: true
+          BLOG_MYSQL_HOST:
+            default: "${CONTAINER_HOSTNAME}"
+            expose: true
+          BLOG_MYSQL_PORT:
+            default: "3306"
+            expose: true
+          TZ:
+            default: UTC
+
+    - name: redis
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: redis:7.0-alpine
+        ports:
+          - id: redis
+            port: 6379
+            type: TCP
+        command:
+          - redis-server
+          - --appendonly
+          - "yes"
+        volumes:
+          - id: blogg-redis-data
+            dir: /data
+        env:
+          BLOG_REDIS_HOST:
+            default: "${CONTAINER_HOSTNAME}"
+            expose: true
+          BLOG_REDIS_PORT:
+            default: "6379"
+            expose: true
+
+    - name: backend
+      template: PREBUILT_V2
+      dependencies:
+        - mysql
+        - redis
+      spec:
+        source:
+          image: ghcr.io/OWNER/blogg-backend:latest
+        ports:
+          - id: api
+            port: 8081
+            type: HTTP
+        env:
+          SERVER_PORT:
+            default: "8081"
+          MYSQL_HOST:
+            default: "${BLOG_MYSQL_HOST}"
+          MYSQL_PORT:
+            default: "${BLOG_MYSQL_PORT}"
+          MYSQL_DATABASE:
+            default: blog
+          MYSQL_USER:
+            default: blog
+          MYSQL_PASSWORD:
+            default: "${PASSWORD}"
+          REDIS_HOST:
+            default: "${BLOG_REDIS_HOST}"
+          REDIS_PORT:
+            default: "${BLOG_REDIS_PORT}"
+          CORS_ALLOWED_ORIGINS:
+            default: "*"
+          BLOG_BACKEND_HOST:
+            default: "${CONTAINER_HOSTNAME}"
+            expose: true
+          BLOG_BACKEND_PORT:
+            default: "8081"
+            expose: true
+
+    - name: frontend
+      template: PREBUILT_V2
+      domainKey: PUBLIC_DOMAIN
+      dependencies:
+        - backend
+      spec:
+        source:
+          image: ghcr.io/OWNER/blogg-frontend:latest
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          BLOG_HOST:
+            default: 0.0.0.0
+          BLOG_FRONTEND_PORT:
+            default: "3000"
+          BACKEND_ORIGIN:
+            default: "http://${BLOG_BACKEND_HOST}:${BLOG_BACKEND_PORT}"

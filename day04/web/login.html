@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>登录 · 炫与梓</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <div id="bg-layer" class="bg-layer" aria-hidden="true"></div>
+
+  <main class="auth-shell">
+    <section class="auth-card">
+      <header class="auth-head">
+        <div class="avatar-ring">
+          <img class="auth-avatar" src="assets/head.png" alt="博客头像">
+        </div>
+        <h1 class="auth-title brand-name">炫与梓</h1>
+        <p class="auth-subtitle">登录或注册，开始记录与分享</p>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="登录或注册">
+        <button type="button" class="tab is-active" data-tab="login" role="tab" aria-selected="true">登录</button>
+        <button type="button" class="tab" data-tab="register" role="tab" aria-selected="false">注册</button>
+      </div>
+
+      <form id="form-login" class="auth-form" novalidate>
+        <label class="field" for="login-phone">
+          <span class="field-label">手机号</span>
+          <div class="input-wrap">
+            <span class="input-prefix">+86</span>
+            <input id="login-phone" name="phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" placeholder="请输入 11 位手机号">
+          </div>
+        </label>
+        <label class="field" for="login-password">
+          <span class="field-label">密码</span>
+          <div class="input-wrap">
+            <input id="login-password" name="password" type="password" maxlength="16" autocomplete="current-password" placeholder="请输入 8~16 位密码">
+            <button type="button" class="pwd-toggle" data-target="login-password" aria-label="显示密码">显示</button>
+          </div>
+        </label>
+        <label class="remember" for="login-remember">
+          <input id="login-remember" type="checkbox">
+          <span>保持登录状态</span>
+        </label>
+        <p class="form-error" id="login-error" role="alert" hidden></p>
+        <button class="btn btn-primary btn-block" id="btn-login" type="submit">登录</button>
+      </form>
+
+      <form id="form-register" class="auth-form" novalidate hidden>
+        <label class="field" for="register-phone">
+          <span class="field-label">手机号</span>
+          <div class="input-wrap">
+            <span class="input-prefix">+86</span>
+            <input id="register-phone" name="phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" placeholder="请输入 11 位手机号">
+          </div>
+        </label>
+        <label class="field" for="register-nickname">
+          <span class="field-label">昵称</span>
+          <div class="input-wrap">
+            <input id="register-nickname" name="nickname" type="text" maxlength="24" autocomplete="nickname" placeholder="展示在导航栏的名称">
+          </div>
+        </label>
+        <label class="field" for="register-password">
+          <span class="field-label">密码</span>
+          <div class="input-wrap">
+            <input id="register-password" name="password" type="password" maxlength="16" autocomplete="new-password" placeholder="8~16 位密码">
+            <button type="button" class="pwd-toggle" data-target="register-password" aria-label="显示密码">显示</button>
+          </div>
+        </label>
+        <label class="field" for="register-confirm">
+          <span class="field-label">确认密码</span>
+          <div class="input-wrap">
+            <input id="register-confirm" name="confirm" type="password" maxlength="16" autocomplete="new-password" placeholder="再次输入密码">
+            <button type="button" class="pwd-toggle" data-target="register-confirm" aria-label="显示密码">显示</button>
+          </div>
+        </label>
+        <p class="form-error" id="register-error" role="alert" hidden></p>
+        <button class="btn btn-primary btn-block" id="btn-register" type="submit">注册并登录</button>
+      </form>
+
+      <footer class="auth-foot">
+        <span id="foot-register">还没有账号？<a href="#" id="link-to-register">立即注册</a></span>
+        <span id="foot-login" hidden>已有账号？<a href="#" id="link-to-login">返回登录</a></span>
+      </footer>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <audio id="bg-audio" src="assets/bgm.wav" loop preload="auto"></audio>
+  <button id="audio-toggle" class="audio-toggle" type="button" aria-pressed="false" aria-label="开启背景音乐">
+    <span class="audio-ico" aria-hidden="true">♪</span>
+    <span class="audio-label">音乐</span>
+  </button>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/login.js"></script>
+  <script src="js/audio.js"></script>
+</body>
+</html>

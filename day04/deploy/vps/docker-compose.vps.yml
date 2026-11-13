@@ -1,0 +1,113 @@
+# 路径 B：VPS / 云服务器生产化编排（常驻、单入口、DB/Redis 不暴露公网）
+#
+# 与 deploy/docker-compose.prod.yml 的区别：
+#   1. 在最前面加一层 nginx 做 TLS 终止 + 反向代理，浏览器只访问 443；
+#   2. mysql / redis 端口**不发布到宿主机**（仅在内部网络互通），缩小攻击面；
+#   3. 数据库 16 张表迁移已烘焙进 db 镜像（deploy/db/Dockerfile 预置 cloud-init.sql），
+#      首次建卷自动建表，无需手工导入；
+#   4. 所有口令 / 域名走 .env，不写死在文件里。
+#
+# 用法：
+#   cp .env.example .env   # 改 BLOG_DOMAIN / 各口令
+#   # 把证书放到 ./certs/fullchain.pem 与 ./certs/privkey.pem（见 README 路径 B）
+#   docker compose -f deploy/vps/docker-compose.vps.yml --env-file deploy/vps/.env up -d --build
+#
+# 注意：本文件内的服务名（db / redis / backend / frontend / web）即内部 DNS；
+#       frontend 容器内已同源反代 /api -> backend:8081，因此 nginx 只需代理 "/" 到 frontend:3000。
+
+services:
+  db:
+    build:
+      context: ../db
+      dockerfile: Dockerfile
+    image: blogg-mysql-with-schema:local
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set in .env}
+      MYSQL_DATABASE: blog
+      MYSQL_USER: blog
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set in .env}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.0-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set in .env}"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - appnet
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.runtime
+    image: blogg-backend:local
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: "8081"
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: blog
+      MYSQL_USER: blog
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set in .env}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set in .env}
+      CORS_ALLOWED_ORIGINS: "*"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - appnet
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    image: blogg-frontend:local
+    restart: unless-stopped
+    environment:
+      BLOG_HOST: 0.0.0.0
+      BLOG_FRONTEND_PORT: "3000"
+      BACKEND_ORIGIN: "http://backend:8081"
+    depends_on:
+      - backend
+    networks:
+      - appnet
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  db_data:
+  redis_data:

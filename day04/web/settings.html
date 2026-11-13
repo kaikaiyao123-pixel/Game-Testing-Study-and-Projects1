@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>账号设置 · 炫与梓</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body class="guard-pending" data-page="settings">
+  <div id="bg-layer" class="bg-layer" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand-inline" href="home.html">
+        <img class="brand-avatar" src="assets/head.png" alt="">
+        <span class="brand-name">炫与梓</span>
+      </a>
+
+      <!-- 决策 6：5 项导航一次性全部启用为真实链接，文案逐字不变 -->
+      <nav class="nav" id="main-nav" aria-label="主导航">
+        <a class="nav-link" data-nav="home" href="home.html">主页</a>
+        <a class="nav-link" data-nav="articles" href="articles.html">文章</a>
+        <a class="nav-link" data-nav="media" href="media.html">影视资源</a>
+        <a class="nav-link" data-nav="vault" href="vault.html">げん的宝库</a>
+        <a class="nav-link" data-nav="moments" href="moments.html">碎碎念</a>
+      </nav>
+
+      <div class="user-area">
+        <!-- 访客态顶栏（决策 2）：匿名显示登录 / 注册入口 -->
+        <div class="guest-actions" id="user-guest">
+          <a class="btn btn-ghost" href="login.html">登录</a>
+          <a class="btn btn-primary btn-sm" href="login.html?tab=register">注册</a>
+        </div>
+
+        <!-- 登录态顶栏：头像下拉；2 个下拉项同批启用为可用链接 -->
+        <div class="user-menu" id="user-session" hidden>
+          <button class="user-trigger" id="user-menu-btn" type="button"
+                  aria-haspopup="menu" aria-expanded="false" aria-controls="user-dropdown">
+            <img class="avatar" id="user-avatar" src="assets/head.png" alt="用户头像">
+            <span class="user-name" id="user-name">加载中</span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+
+          <div class="user-dropdown" id="user-dropdown" role="menu" hidden>
+            <div class="dropdown-head">
+              <img class="dropdown-avatar" src="assets/head.png" alt="">
+              <div class="dropdown-id">
+                <strong id="dropdown-name">加载中</strong>
+              </div>
+            </div>
+
+            <div class="dropdown-list">
+              <a class="dropdown-item" role="menuitem" href="profile.html">
+                <span class="item-icon" aria-hidden="true">◇</span>
+                <span class="item-label">个人资料</span>
+              </a>
+              <a class="dropdown-item" role="menuitem" href="settings.html">
+                <span class="item-icon" aria-hidden="true">◇</span>
+                <span class="item-label">账号设置</span>
+              </a>
+            </div>
+
+            <div class="dropdown-divider" role="separator"></div>
+
+            <div class="dropdown-foot">
+              <button class="dropdown-item is-danger" id="btn-logout" type="button" role="menuitem">
+                <span class="item-icon" aria-hidden="true">↪</span>
+                <span class="item-label">退出登录</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="展开导航" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero shell-card">
+      <div class="shell-head">
+        <span class="shell-kicker" id="shell-kicker">F7 · 账号设置</span>
+        <h1 id="shell-title">账号设置</h1>
+        <p class="hero-desc" id="shell-desc">安全（改密 / 会话 / 登录记录）、偏好与危险操作三个分区。</p>
+      </div>
+
+      <!-- 三态：加载 / 空 / 错误（P8′ 硬要求，页面壳阶段统一收敛到空态） -->
+      <div class="state-pane" id="state-loading" role="status">
+        <span class="state-spinner" aria-hidden="true"></span>
+        <p>正在加载内容…</p>
+      </div>
+
+      <div class="state-pane" id="state-empty" hidden>
+        <div class="state-art" aria-hidden="true">◇</div>
+        <h2>这里还没有内容</h2>
+        <p id="shell-empty-hint">账号设置项将在后续阶段开放，当前为只读页面壳。</p>
+        <div class="state-actions">
+          <button class="btn btn-primary" id="shell-create" type="button" hidden>去创建</button>
+          <a class="btn btn-ghost" href="home.html">返回主页</a>
+        </div>
+        <p class="state-guest" id="shell-guest-hint">登录后即可发布与管理内容。</p>
+        <p class="shell-notice" id="shell-notice" role="status" hidden></p>
+      </div>
+
+      <div class="state-pane" id="state-error" role="alert" hidden>
+        <div class="state-art" aria-hidden="true">!</div>
+        <h2>加载失败</h2>
+        <p id="shell-error-text">内容加载失败，请稍后重试。</p>
+        <button class="btn btn-ghost" id="shell-retry" type="button">重新加载</button>
+      </div>
+      <div class="content-root" id="content-root" hidden></div>
+    </section>
+  </main>
+
+  <!-- 静态 DOM id 声明：供 selfcheck 静态校验；惰性模板，不进入活动 DOM 树，不与运行时动态创建的元素产生重复 id 冲突 -->
+  <template id="selfcheck-declared-ids">
+    <p id="article-notice"></p>
+    <p id="settings-notice"></p>
+  </template>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/site.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/page-shell.js"></script>
+</body>
+</html>

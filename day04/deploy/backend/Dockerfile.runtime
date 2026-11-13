@@ -1,0 +1,14 @@
+# 生产运行时镜像：复用已构建好的 fat jar，不在镜像内执行 Maven。
+# 构建上下文必须是仓库根目录，例如：
+#   docker build -f deploy/backend/Dockerfile.runtime -t blogg/backend:latest .
+# Docker Hub 不可达时可切换镜像源：
+#   docker build --build-arg JRE_BASE=docker.m.daocloud.io/library/eclipse-temurin:17-jre ...
+ARG JRE_BASE=eclipse-temurin:17-jre
+FROM ${JRE_BASE}
+
+WORKDIR /app
+COPY backend/target/blog-backend.jar /app/app.jar
+
+EXPOSE 8081
+ENV SERVER_PORT=8081
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

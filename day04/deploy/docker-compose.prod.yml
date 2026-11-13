@@ -1,0 +1,98 @@
+name: blogg-prod
+
+# 生产化编排：4 服务，仅前端对公网暴露一个端口。
+# 与本机开发栈（3000 / 8081 / 3306 / 6379）端口全部错开，可并存运行。
+#
+#   docker compose -f deploy/docker-compose.prod.yml up -d --build
+#   打开 http://127.0.0.1:3100/login.html
+#
+# 首次创建数据卷时，mysql 镜像内的 /docker-entrypoint-initdb.d/01-cloud-init.sql
+# 会自动建齐 16 张表（init.sql + V1..V5），无需手工导入。
+
+services:
+  mysql:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+      args:
+        MYSQL_BASE: "${MYSQL_BASE:-mysql:8.0}"
+    image: blogg-prod/mysql-with-schema:latest
+    container_name: blogg-prod-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-blog_root_2026}"
+      MYSQL_DATABASE: blog
+      MYSQL_USER: blog
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-blog_pass_2026}"
+      TZ: UTC
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: blogg-prod-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend/Dockerfile.runtime
+      args:
+        JRE_BASE: "${JRE_BASE:-eclipse-temurin:17-jre}"
+    image: blogg-prod/backend:latest
+    container_name: blogg-prod-backend
+    environment:
+      SERVER_PORT: 8081
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: blog
+      MYSQL_USER: blog
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-blog_pass_2026}"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-*}"
+    ports:
+      - "127.0.0.1:8082:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend/Dockerfile
+      args:
+        NODE_BASE: "${NODE_BASE:-node:20-alpine}"
+    image: blogg-prod/frontend:latest
+    container_name: blogg-prod-frontend
+    environment:
+      BLOG_HOST: 0.0.0.0
+      BLOG_FRONTEND_PORT: 3000
+      BACKEND_ORIGIN: http://backend:8081
+    ports:
+      - "127.0.0.1:3100:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  redis_data:
